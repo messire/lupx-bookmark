@@ -17,6 +17,7 @@ npm-debug.log*
 # IDE
 .idea/
 .vscode/
+.claude/
 
 # OS
 .DS_Store
@@ -27,3 +28,6 @@ package-lock.json
 
 # Claude Code context (local only)
 CLAUDE.md
+
+# Generated at build time
+public/wallpapers.json

@@ -1,0 +1,385 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  z-index: 50;
+  pointer-events: none;
+  transition: background 0.25s ease;
+}
+
+.backdropVisible {
+  background: rgba(0, 0, 0, 0.25);
+  pointer-events: all;
+}
+
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 300px;
+  background: var(--color-card-bg);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+}
+
+.panelOpen {
+  transform: translateX(0);
+}
+
+.header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.closeBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+  opacity: 0.6;
+}
+
+.closeBtn:hover {
+  background: var(--color-card-hover);
+  opacity: 1;
+}
+
+.rollbackBtn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1.5px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  opacity: 0.7;
+}
+
+.rollbackBtn:hover {
+  background: var(--color-card-hover);
+  border-color: var(--color-accent);
+  opacity: 1;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-subtle);
+  opacity: 0.5;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.label {
+  font-size: 14px;
+}
+
+.hint {
+  font-size: 12px;
+  opacity: 0.4;
+}
+
+/* Stepper */
+.stepper {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.stepBtn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.stepBtn:hover {
+  background: var(--color-card-hover);
+}
+
+.stepValue {
+  width: 28px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  border-left: 1.5px solid var(--color-border);
+  border-right: 1.5px solid var(--color-border);
+  line-height: 32px;
+}
+
+/* Toggle */
+.toggle {
+  width: 40px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  background: var(--color-border);
+  cursor: pointer;
+  padding: 2px;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.toggleOn {
+  background: var(--color-accent);
+}
+
+.toggleThumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+  display: block;
+}
+
+.toggleOn .toggleThumb {
+  transform: translateX(16px);
+}
+
+/* Select */
+.select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+.select:focus {
+  border-color: var(--color-accent);
+}
+
+/* Segmented control (background type selector) */
+.segmented {
+  display: flex;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.segmentBtn {
+  flex: 1;
+  padding: 7px 4px;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.12s;
+  opacity: 0.5;
+}
+
+.segmentBtn + .segmentBtn {
+  border-left: 1.5px solid var(--color-border);
+}
+
+.segmentActive {
+  background: var(--color-accent);
+  color: #fff;
+  opacity: 1;
+}
+
+/* Color picker */
+.colorInput {
+  width: 36px;
+  height: 28px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 6px;
+  padding: 2px;
+  cursor: pointer;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+/* Angle slider */
+.rangeInput {
+  flex: 1;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+/* URL / text input */
+.textInput {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 12px;
+  outline: none;
+  min-width: 0;
+}
+
+.textInput:focus {
+  border-color: var(--color-accent);
+}
+
+/* File upload */
+.uploadBtn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.12s;
+  white-space: nowrap;
+}
+
+.uploadBtn:hover {
+  background: var(--color-card-hover);
+}
+
+.hiddenInput {
+  display: none;
+}
+
+/* Wallpaper gallery sub-label */
+.subLabel {
+  display: block;
+  font-size: 12px;
+  opacity: 0.5;
+  margin-bottom: 8px;
+}
+
+/* Wallpaper grid */
+.wallpaperGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.wallpaperThumb {
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  background: none;
+  aspect-ratio: 16 / 9;
+  transition: border-color 0.12s, transform 0.12s;
+}
+
+.wallpaperThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.wallpaperThumb:hover {
+  border-color: var(--color-accent);
+  transform: scale(1.03);
+}
+
+.wallpaperSelected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+/* Card style picker */
+.cardStyleGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cardStyleBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.cardStyleBtn:hover {
+  background: var(--color-card-hover);
+  border-color: var(--color-accent);
+}
+
+.cardStyleActive {
+  border-color: var(--color-accent);
+  background: var(--color-card-hover);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.cardStyleLabel {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cardStyleDesc {
+  font-size: 11px;
+  opacity: 0.5;
+}
