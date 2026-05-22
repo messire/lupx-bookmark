@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { Settings, BackgroundType, CardStyle } from "../../types";
 import { saveBackgroundImage } from "../../newtab/useBackground";
 import { useWallpapers } from "../../newtab/useWallpapers";
@@ -34,8 +34,13 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
   const fileInputRef = useRef<HTMLInputElement>(null);
   const wallpapers = useWallpapers();
 
+  // Snapshot settings the moment the panel opens so Rollback has a reference.
+  // Intentionally excludes `settings` from deps: we only want to capture the
+  // value at the instant `open` flips to true, not re-snapshot on every change.
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
   useEffect(() => {
-    if (open) setOldSettings(settings);
+    if (open) setOldSettings(settingsRef.current);
   }, [open]);
 
   const hasChanges =
@@ -51,10 +56,10 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
     handleUpdate({ background: { ...settings.background, ...patch } });
   }
 
-  async function handleClose() {
+  const handleClose = useCallback(() => {
     setOldSettings(null);
     onClose();
-  }
+  }, [onClose]);
 
   async function handleRollback() {
     if (!oldSettings) return;
@@ -76,7 +81,7 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, handleClose]);
 
   const bg = settings.background;
 

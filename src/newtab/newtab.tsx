@@ -137,21 +137,21 @@ function App() {
     [groupDragFrom, swapGroups],
   );
 
-  function handleDragEnd() {
+  const handleDragEnd = useCallback(() => {
     setItemDragFrom(null);
     setItemDragOver(null);
     setGroupDragFrom(null);
     setGroupDragOver(null);
-  }
+  }, []);
 
   // ── Modal ───────────────────────────────────────────────────────────────
 
-  async function handleConfirm(url: string, title: string) {
+  const handleConfirm = useCallback(async (url: string, title: string) => {
     if (addingToGroup) {
       await addItem(addingToGroup, url, title);
     }
     setAddingToGroup(null);
-  }
+  }, [addingToGroup, addItem]);
 
   // Deleting via the × button also decrements the settings counter
   const handleDeleteGroup = useCallback(
@@ -164,9 +164,9 @@ function App() {
 
   // ── Search engine ────────────────────────────────────────────────────────
 
-  function handleEngineChange(engine: SearchEngine) {
+  const handleEngineChange = useCallback((engine: SearchEngine) => {
     updateSettings({ searchEngine: engine });
-  }
+  }, [updateSettings]);
 
   // ── Render ──────────────────────────────────────────────────────────────
 

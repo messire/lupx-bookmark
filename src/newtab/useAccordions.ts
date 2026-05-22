@@ -92,6 +92,10 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
   // Refs so effects can read the latest values without stale closures.
   const groupsRef = useRef<AccordionGroup[]>([]);
   const isLoadedRef = useRef(false);
+  // Always reflects the latest accordionCount so the initial-load effect can
+  // read it without listing it as a dep (we only want that effect to run once).
+  const accordionCountRef = useRef(accordionCount);
+  accordionCountRef.current = accordionCount;
 
   // ── Persist helper ────────────────────────────────────────────────────
   // useCallback([], []) is correct: only touches groupsRef (stable ref) and
@@ -128,14 +132,13 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
       if (cancelled) return;
 
       // Sync with current accordionCount on first load
-      const synced = applyCount(loaded, accordionCount);
+      const synced = applyCount(loaded, accordionCountRef.current);
       isLoadedRef.current = true;
       await persist(synced);
     })();
 
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [persist]);
 
   // ── Sync count when accordionCount changes ────────────────────────────
   useEffect(() => {
@@ -144,8 +147,7 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
     if (synced !== groupsRef.current) {
       persist(synced);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accordionCount]);
+  }, [accordionCount, persist]);
 
   // ── Listen for changes from other tabs ────────────────────────────────
   useEffect(() => {

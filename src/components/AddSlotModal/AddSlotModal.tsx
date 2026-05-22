@@ -7,6 +7,16 @@ interface AddSlotModalProps {
   onClose: () => void;
 }
 
+function toSuggestions(items: chrome.history.HistoryItem[]): HistorySuggestion[] {
+  return items
+    .filter((item) => item.url && item.title)
+    .map((item) => ({
+      url: item.url!,
+      title: item.title!,
+      visitCount: item.visitCount ?? 0,
+    }));
+}
+
 export default function AddSlotModal({ onConfirm, onClose }: AddSlotModalProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<HistorySuggestion[]>([]);
@@ -41,16 +51,6 @@ export default function AddSlotModal({ onConfirm, onClose }: AddSlotModalProps) 
       (items) => setSuggestions(toSuggestions(items))
     );
   }, [query]);
-
-  function toSuggestions(items: chrome.history.HistoryItem[]): HistorySuggestion[] {
-    return items
-      .filter((item) => item.url && item.title)
-      .map((item) => ({
-        url: item.url!,
-        title: item.title!,
-        visitCount: item.visitCount ?? 0,
-      }));
-  }
 
   function confirm(url: string, title: string) {
     const normalized = url.startsWith("http") ? url : `https://${url}`;
