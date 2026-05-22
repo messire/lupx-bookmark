@@ -55,7 +55,13 @@ async function loadLegacy(): Promise<SpeedDialSlot[] | null> {
 }
 
 async function saveToStorage(groups: AccordionGroup[]): Promise<void> {
-  await chrome.storage.local.set({ [STORAGE_KEY]: groups });
+  try {
+    await chrome.storage.local.set({ [STORAGE_KEY]: groups });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[lupx] Failed to save bookmarks:", message);
+    throw err;
+  }
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────
@@ -106,9 +112,16 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
   // useCallback([], []) is correct: only touches groupsRef (stable ref) and
   // setGroups (stable setter) — no component state in the dep chain.
   const persist = useCallback(async (next: AccordionGroup[]) => {
+    const prev = groupsRef.current;
     groupsRef.current = next;
     setGroups(next);
-    await saveToStorage(next);
+    try {
+      await saveToStorage(next);
+    } catch {
+      // Roll back UI to the last successfully persisted state
+      groupsRef.current = prev;
+      setGroups(prev);
+    }
   }, []);
 
   // ── Initial load + migration ──────────────────────────────────────────
