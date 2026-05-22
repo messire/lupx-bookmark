@@ -32,7 +32,7 @@ single-purpose extension that does exactly one thing and stays out of your way.
 ## Tech Stack
 
 | Layer           | Technology                                                                                     |
-|-----------------|------------------------------------------------------------------------------------------------|
+| --------------- | ---------------------------------------------------------------------------------------------- |
 | Language        | TypeScript 5 (strict mode)                                                                     |
 | UI framework    | React 18                                                                                       |
 | Bundler         | Vite 8 + `vite-plugin-web-extension`                                                           |

@@ -15,14 +15,14 @@ const EMPTY_SLOT: SpeedDialSlot = { id: "__add__", url: null, title: null };
 
 // Maps card style → extra CSS class on the accordion container
 const ACCORDION_STYLE_CLASS: Record<CardStyle, string> = {
-  minimal:    styles.accordionMinimal,
-  glass:      styles.accordionGlass,
-  bento:      styles.accordionBento,
-  icons:      styles.accordionMinimal,    // same container look as minimal
-  neon:       styles.accordionNeon,
+  minimal: styles.accordionMinimal,
+  glass: styles.accordionGlass,
+  bento: styles.accordionBento,
+  icons: styles.accordionMinimal, // same container look as minimal
+  neon: styles.accordionNeon,
   neumorphic: styles.accordionNeumorphic,
-  stamp:      styles.accordionMinimal,    // stamp aesthetic doesn't suit containers
-  aurora:     styles.accordionAurora,
+  stamp: styles.accordionMinimal, // stamp aesthetic doesn't suit containers
+  aurora: styles.accordionAurora,
 };
 
 interface DragOverInfo {
@@ -196,11 +196,7 @@ export default function AccordionGroup({
             onKeyDown={handleNameKeyDown}
           />
         ) : (
-          <span
-            className={styles.name}
-            onDoubleClick={startEdit}
-            title="Double-click to rename"
-          >
+          <span className={styles.name} onDoubleClick={startEdit} title="Double-click to rename">
             {group.name || "new"}
           </span>
         )}
@@ -208,9 +204,11 @@ export default function AccordionGroup({
         {/* Mini favicons (shown only when collapsed) */}
         {group.collapsed && (
           <div className={styles.miniIcons}>
-            {filledItems.filter((i): i is FilledSlot => i.url !== null).map((item) => (
-              <MiniIcon key={item.id} item={item} />
-            ))}
+            {filledItems
+              .filter((i): i is FilledSlot => i.url !== null)
+              .map((item) => (
+                <MiniIcon key={item.id} item={item} />
+              ))}
           </div>
         )}
 
@@ -241,23 +239,21 @@ export default function AccordionGroup({
 
       {/* ── Card grid (expanded only) ── */}
       {!group.collapsed && (
-        <div
-          className={styles.content}
-          style={{ gridTemplateColumns: gridCols }}
-        >
+        <div className={styles.content} style={{ gridTemplateColumns: gridCols }}>
           {filledItems.map((item, idx) => (
             <BookmarkCard
               key={item.id}
               slot={item}
               showTitle={showTitles}
               cardStyle={cardStyle}
-              onClick={() => {/* filled cards are navigated by href */}}
+              onClick={() => {
+                /* filled cards are navigated by href */
+              }}
               onDragStart={() => onItemDragStart(group.id, idx)}
               onDragOver={(e) => onItemDragOver(group.id, idx, e)}
               onDrop={() => onItemDrop(group.id, idx)}
               isDragOver={
-                itemDragOverInfo?.groupId === group.id &&
-                itemDragOverInfo?.itemIdx === idx
+                itemDragOverInfo?.groupId === group.id && itemDragOverInfo?.itemIdx === idx
               }
             />
           ))}
@@ -269,7 +265,9 @@ export default function AccordionGroup({
               showTitle={false}
               cardStyle={cardStyle}
               onClick={() => onClickAdd(group.id)}
-              onDragStart={() => {/* empty card can't be dragged */}}
+              onDragStart={() => {
+                /* empty card can't be dragged */
+              }}
               onDragOver={(e) => onItemDragOver(group.id, filledItems.length, e)}
               onDrop={() => onItemDrop(group.id, filledItems.length)}
               isDragOver={

@@ -12,10 +12,10 @@ import styles from "./newtab.module.css";
 
 // ── Card size ─────────────────────────────────────────────────────────────
 
-const PAGE_PADDING_PCT = 0.10; // must match .page { padding: 24px 10% }
-const ACCORDION_BORDER = 3;    // accordion border (1.5 * 2)
-const CONTENT_PAD_X = 24;      // accordion .content left+right padding (12*2)
-const CARD_GAP = 10;           // gap between cards
+const PAGE_PADDING_PCT = 0.1; // must match .page { padding: 24px 10% }
+const ACCORDION_BORDER = 3; // accordion border (1.5 * 2)
+const CONTENT_PAD_X = 24; // accordion .content left+right padding (12*2)
+const CARD_GAP = 10; // gap between cards
 
 function calcCardWidth(itemsPerRow: number): number {
   const pagePadding = window.innerWidth * PAGE_PADDING_PCT;
@@ -31,7 +31,9 @@ function calcCardWidth(itemsPerRow: number): number {
 function useCardWidth(itemsPerRow: number): number {
   const [w, setW] = useState(() => calcCardWidth(itemsPerRow));
   useEffect(() => {
-    function update() { setW(calcCardWidth(itemsPerRow)); }
+    function update() {
+      setW(calcCardWidth(itemsPerRow));
+    }
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -50,15 +52,8 @@ interface ItemDrag {
 
 function App() {
   const { settings, updateSettings } = useSettings();
-  const {
-    groups,
-    moveItem,
-    swapGroups,
-    deleteGroup,
-    addItem,
-    renameGroup,
-    toggleCollapse,
-  } = useAccordions(settings.accordionCount);
+  const { groups, moveItem, swapGroups, deleteGroup, addItem, renameGroup, toggleCollapse } =
+    useAccordions(settings.accordionCount);
   const cardWidth = useCardWidth(settings.itemsPerRow);
 
   // Settings panel
@@ -91,23 +86,15 @@ function App() {
     setItemDragFrom({ groupId, itemIdx });
   }, []);
 
-  const handleItemDragOver = useCallback(
-    (groupId: string, itemIdx: number, e: React.DragEvent) => {
-      e.preventDefault();
-      setItemDragOver({ groupId, itemIdx });
-    },
-    [],
-  );
+  const handleItemDragOver = useCallback((groupId: string, itemIdx: number, e: React.DragEvent) => {
+    e.preventDefault();
+    setItemDragOver({ groupId, itemIdx });
+  }, []);
 
   const handleItemDrop = useCallback(
     async (groupId: string, itemIdx: number) => {
       if (!itemDragFrom) return;
-      await moveItem(
-        itemDragFrom.groupId,
-        itemDragFrom.itemIdx,
-        groupId,
-        itemIdx,
-      );
+      await moveItem(itemDragFrom.groupId, itemDragFrom.itemIdx, groupId, itemIdx);
       setItemDragFrom(null);
       setItemDragOver(null);
     },
@@ -118,13 +105,10 @@ function App() {
     setGroupDragFrom(groupIdx);
   }, []);
 
-  const handleGroupDragOver = useCallback(
-    (groupIdx: number, e: React.DragEvent) => {
-      e.preventDefault();
-      setGroupDragOver(groupIdx);
-    },
-    [],
-  );
+  const handleGroupDragOver = useCallback((groupIdx: number, e: React.DragEvent) => {
+    e.preventDefault();
+    setGroupDragOver(groupIdx);
+  }, []);
 
   const handleGroupDrop = useCallback(
     async (groupIdx: number) => {
@@ -146,12 +130,15 @@ function App() {
 
   // ── Modal ───────────────────────────────────────────────────────────────
 
-  const handleConfirm = useCallback(async (url: string, title: string) => {
-    if (addingToGroup) {
-      await addItem(addingToGroup, url, title);
-    }
-    setAddingToGroup(null);
-  }, [addingToGroup, addItem]);
+  const handleConfirm = useCallback(
+    async (url: string, title: string) => {
+      if (addingToGroup) {
+        await addItem(addingToGroup, url, title);
+      }
+      setAddingToGroup(null);
+    },
+    [addingToGroup, addItem],
+  );
 
   // Deleting via the × button also decrements the settings counter
   const handleDeleteGroup = useCallback(
@@ -164,19 +151,19 @@ function App() {
 
   // ── Search engine ────────────────────────────────────────────────────────
 
-  const handleEngineChange = useCallback((engine: SearchEngine) => {
-    updateSettings({ searchEngine: engine });
-  }, [updateSettings]);
+  const handleEngineChange = useCallback(
+    (engine: SearchEngine) => {
+      updateSettings({ searchEngine: engine });
+    },
+    [updateSettings],
+  );
 
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
     <div className={styles.page} onDragEnd={handleDragEnd}>
       <div className={styles.searchBarRow}>
-        <SearchBar
-          engine={settings.searchEngine}
-          onEngineChange={handleEngineChange}
-        />
+        <SearchBar engine={settings.searchEngine} onEngineChange={handleEngineChange} />
       </div>
 
       {groups.map((group, idx) => (
@@ -206,11 +193,7 @@ function App() {
       ))}
 
       {/* Settings button */}
-      <button
-        className={styles.settingsBtn}
-        onClick={() => setSettingsOpen(true)}
-        title="Settings"
-      >
+      <button className={styles.settingsBtn} onClick={() => setSettingsOpen(true)} title="Settings">
         <svg
           width="18"
           height="18"
@@ -234,10 +217,7 @@ function App() {
       />
 
       {addingToGroup !== null && (
-        <AddSlotModal
-          onConfirm={handleConfirm}
-          onClose={() => setAddingToGroup(null)}
-        />
+        <AddSlotModal onConfirm={handleConfirm} onClose={() => setAddingToGroup(null)} />
       )}
     </div>
   );

@@ -10,7 +10,9 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -24,8 +26,10 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^10.4.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "jsdom": "^29.1.1",
+    "prettier": "^3.8.3",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.59.4",
     "vite": "^8.0.14",

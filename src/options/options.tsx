@@ -14,7 +14,6 @@ function OptionsApp() {
       </header>
 
       <main className={styles.form}>
-
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Layout</h2>
 
@@ -23,13 +22,21 @@ function OptionsApp() {
             <div className={styles.stepper}>
               <button
                 className={styles.stepBtn}
-                onClick={() => updateSettings({ accordionCount: Math.max(1, settings.accordionCount - 1) })}
-              >−</button>
+                onClick={() =>
+                  updateSettings({ accordionCount: Math.max(1, settings.accordionCount - 1) })
+                }
+              >
+                −
+              </button>
               <span className={styles.stepValue}>{settings.accordionCount}</span>
               <button
                 className={styles.stepBtn}
-                onClick={() => updateSettings({ accordionCount: Math.min(10, settings.accordionCount + 1) })}
-              >+</button>
+                onClick={() =>
+                  updateSettings({ accordionCount: Math.min(10, settings.accordionCount + 1) })
+                }
+              >
+                +
+              </button>
             </div>
           </label>
 
@@ -38,13 +45,21 @@ function OptionsApp() {
             <div className={styles.stepper}>
               <button
                 className={styles.stepBtn}
-                onClick={() => updateSettings({ itemsPerRow: Math.max(2, settings.itemsPerRow - 1) })}
-              >−</button>
+                onClick={() =>
+                  updateSettings({ itemsPerRow: Math.max(2, settings.itemsPerRow - 1) })
+                }
+              >
+                −
+              </button>
               <span className={styles.stepValue}>{settings.itemsPerRow}</span>
               <button
                 className={styles.stepBtn}
-                onClick={() => updateSettings({ itemsPerRow: Math.min(10, settings.itemsPerRow + 1) })}
-              >+</button>
+                onClick={() =>
+                  updateSettings({ itemsPerRow: Math.min(10, settings.itemsPerRow + 1) })
+                }
+              >
+                +
+              </button>
             </div>
           </label>
 
@@ -80,7 +95,6 @@ function OptionsApp() {
             </select>
           </label>
         </section>
-
       </main>
     </div>
   );
@@ -92,5 +106,5 @@ if (!root) throw new Error("#root element not found");
 createRoot(root).render(
   <StrictMode>
     <OptionsApp />
-  </StrictMode>
+  </StrictMode>,
 );

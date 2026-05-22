@@ -12,9 +12,7 @@ function makeGroup(
   return { collapsed: false, items: [], ...overrides };
 }
 
-function makeSlot(
-  overrides: Partial<SpeedDialSlot> & { id: string },
-): SpeedDialSlot {
+function makeSlot(overrides: Partial<SpeedDialSlot> & { id: string }): SpeedDialSlot {
   return { url: null, title: null, ...overrides };
 }
 
@@ -60,7 +58,7 @@ describe("useAccordions — initial load", () => {
   it("migrates bookmarks from the legacy flat-grid format", async () => {
     const legacy: SpeedDialSlot[] = [
       { id: "s1", url: "https://a.com", title: "A" },
-      { id: "s2", url: null, title: null },           // empty slot — skipped
+      { id: "s2", url: null, title: null }, // empty slot — skipped
       { id: "s3", url: "https://b.com", title: "B" },
     ];
     seedStorage("sync", { speedDial: legacy });
@@ -184,13 +182,15 @@ describe("useAccordions — moveItem", () => {
     seedStorage("local", { accordionGroups: groups });
 
     const { result } = await mountHook(1);
-    const setCallsBefore = (chrome.storage.local.set as ReturnType<typeof import("vitest").vi.fn>).mock.calls.length;
+    const setCallsBefore = (chrome.storage.local.set as ReturnType<typeof import("vitest").vi.fn>)
+      .mock.calls.length;
 
     await act(async () => {
       await result.current.moveItem("g1", 0, "g1", 0);
     });
 
-    const setCallsAfter = (chrome.storage.local.set as ReturnType<typeof import("vitest").vi.fn>).mock.calls.length;
+    const setCallsAfter = (chrome.storage.local.set as ReturnType<typeof import("vitest").vi.fn>)
+      .mock.calls.length;
     expect(setCallsAfter).toBe(setCallsBefore); // no extra persist call
   });
 
@@ -280,13 +280,15 @@ describe("useAccordions — swapGroups", () => {
     seedStorage("local", { accordionGroups: groups });
 
     const { result } = await mountHook(1);
-    const setCallsBefore = (chrome.storage.local.set as ReturnType<typeof import("vitest").vi.fn>).mock.calls.length;
+    const setCallsBefore = (chrome.storage.local.set as ReturnType<typeof import("vitest").vi.fn>)
+      .mock.calls.length;
 
     await act(async () => {
       await result.current.swapGroups(0, 0);
     });
 
-    const setCallsAfter = (chrome.storage.local.set as ReturnType<typeof import("vitest").vi.fn>).mock.calls.length;
+    const setCallsAfter = (chrome.storage.local.set as ReturnType<typeof import("vitest").vi.fn>)
+      .mock.calls.length;
     expect(setCallsAfter).toBe(setCallsBefore);
   });
 });

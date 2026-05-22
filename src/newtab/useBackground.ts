@@ -58,10 +58,7 @@ export function useBackground(background: Background) {
 
   // React to file uploads that don't change type/imageUrl deps
   useEffect(() => {
-    function onChanged(
-      changes: Record<string, chrome.storage.StorageChange>,
-      area: string,
-    ) {
+    function onChanged(changes: Record<string, chrome.storage.StorageChange>, area: string) {
       if (area !== "local" || !(BG_IMAGE_STORAGE_KEY in changes)) return;
       if (background.type === "image" && !background.imageUrl) {
         setLocalImageData(changes[BG_IMAGE_STORAGE_KEY].newValue ?? null);

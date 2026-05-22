@@ -20,7 +20,7 @@ export function useWallpapers(): Wallpaper[] {
           names.map((name) => ({
             name,
             url: chrome.runtime.getURL(`wallpapers/${name}`),
-          }))
+          })),
         );
       })
       .catch(() => setWallpapers([]));

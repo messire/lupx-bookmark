@@ -69,7 +69,12 @@ export interface UseAccordionsResult {
    * Same group → swap positions.
    * Different groups → remove from source, insert at toIdx in target.
    */
-  moveItem: (fromGroupId: string, fromIdx: number, toGroupId: string, toIdx: number) => Promise<void>;
+  moveItem: (
+    fromGroupId: string,
+    fromIdx: number,
+    toGroupId: string,
+    toIdx: number,
+  ) => Promise<void>;
   /** Rename a group (persists immediately). */
   renameGroup: (groupId: string, name: string) => Promise<void>;
   /** Toggle the collapsed state of a group. */
@@ -138,7 +143,9 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
       await persist(synced);
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [persist]);
 
   // ── Sync count when accordionCount changes ────────────────────────────
@@ -152,10 +159,7 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
 
   // ── Listen for changes from other tabs ────────────────────────────────
   useEffect(() => {
-    function onChanged(
-      changes: Record<string, chrome.storage.StorageChange>,
-      area: string,
-    ) {
+    function onChanged(changes: Record<string, chrome.storage.StorageChange>, area: string) {
       if (area === "local" && STORAGE_KEY in changes) {
         const updated = changes[STORAGE_KEY].newValue as AccordionGroup[];
         groupsRef.current = updated;
@@ -170,65 +174,78 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
   // All operations read only groupsRef.current (stable ref) and call persist
   // (stable callback), so they can all have [] deps and be stable themselves.
 
-  const addItem = useCallback(async (groupId: string, url: string, title: string) => {
-    const next = groupsRef.current.map((g) =>
-      g.id !== groupId ? g : { ...g, items: [...g.items, makeSlot(url, title)] },
-    );
-    await persist(next);
-  }, [persist]);
+  const addItem = useCallback(
+    async (groupId: string, url: string, title: string) => {
+      const next = groupsRef.current.map((g) =>
+        g.id !== groupId ? g : { ...g, items: [...g.items, makeSlot(url, title)] },
+      );
+      await persist(next);
+    },
+    [persist],
+  );
 
-  const moveItem = useCallback(async (
-    fromGroupId: string,
-    fromIdx: number,
-    toGroupId: string,
-    toIdx: number,
-  ) => {
-    if (fromGroupId === toGroupId && fromIdx === toIdx) return;
+  const moveItem = useCallback(
+    async (fromGroupId: string, fromIdx: number, toGroupId: string, toIdx: number) => {
+      if (fromGroupId === toGroupId && fromIdx === toIdx) return;
 
-    const next = groupsRef.current.map((g) => ({ ...g, items: [...g.items] }));
-    const fromGroup = next.find((g) => g.id === fromGroupId);
-    const toGroup = next.find((g) => g.id === toGroupId);
-    if (!fromGroup || !toGroup) return;
+      const next = groupsRef.current.map((g) => ({ ...g, items: [...g.items] }));
+      const fromGroup = next.find((g) => g.id === fromGroupId);
+      const toGroup = next.find((g) => g.id === toGroupId);
+      if (!fromGroup || !toGroup) return;
 
-    if (fromGroupId === toGroupId) {
-      // Within group: swap
-      const items = fromGroup.items;
-      if (toIdx >= items.length) return; // dropping on add-card within same group: no-op
-      [items[fromIdx], items[toIdx]] = [items[toIdx], items[fromIdx]];
-    } else {
-      // Cross-group: extract then insert
-      const [item] = fromGroup.items.splice(fromIdx, 1);
-      toGroup.items.splice(Math.min(toIdx, toGroup.items.length), 0, item);
-    }
+      if (fromGroupId === toGroupId) {
+        // Within group: swap
+        const items = fromGroup.items;
+        if (toIdx >= items.length) return; // dropping on add-card within same group: no-op
+        [items[fromIdx], items[toIdx]] = [items[toIdx], items[fromIdx]];
+      } else {
+        // Cross-group: extract then insert
+        const [item] = fromGroup.items.splice(fromIdx, 1);
+        toGroup.items.splice(Math.min(toIdx, toGroup.items.length), 0, item);
+      }
 
-    await persist(next);
-  }, [persist]);
+      await persist(next);
+    },
+    [persist],
+  );
 
-  const renameGroup = useCallback(async (groupId: string, name: string) => {
-    const next = groupsRef.current.map((g) =>
-      g.id !== groupId ? g : { ...g, name: name.trim() || "New" },
-    );
-    await persist(next);
-  }, [persist]);
+  const renameGroup = useCallback(
+    async (groupId: string, name: string) => {
+      const next = groupsRef.current.map((g) =>
+        g.id !== groupId ? g : { ...g, name: name.trim() || "New" },
+      );
+      await persist(next);
+    },
+    [persist],
+  );
 
-  const toggleCollapse = useCallback(async (groupId: string) => {
-    const next = groupsRef.current.map((g) =>
-      g.id !== groupId ? g : { ...g, collapsed: !g.collapsed },
-    );
-    await persist(next);
-  }, [persist]);
+  const toggleCollapse = useCallback(
+    async (groupId: string) => {
+      const next = groupsRef.current.map((g) =>
+        g.id !== groupId ? g : { ...g, collapsed: !g.collapsed },
+      );
+      await persist(next);
+    },
+    [persist],
+  );
 
-  const swapGroups = useCallback(async (idxA: number, idxB: number) => {
-    if (idxA === idxB) return;
-    const next = [...groupsRef.current];
-    [next[idxA], next[idxB]] = [next[idxB], next[idxA]];
-    await persist(next);
-  }, [persist]);
+  const swapGroups = useCallback(
+    async (idxA: number, idxB: number) => {
+      if (idxA === idxB) return;
+      const next = [...groupsRef.current];
+      [next[idxA], next[idxB]] = [next[idxB], next[idxA]];
+      await persist(next);
+    },
+    [persist],
+  );
 
-  const deleteGroup = useCallback(async (groupId: string) => {
-    const next = groupsRef.current.filter((g) => g.id !== groupId);
-    await persist(next);
-  }, [persist]);
+  const deleteGroup = useCallback(
+    async (groupId: string) => {
+      const next = groupsRef.current.filter((g) => g.id !== groupId);
+      await persist(next);
+    },
+    [persist],
+  );
 
   return { groups, addItem, moveItem, renameGroup, toggleCollapse, swapGroups, deleteGroup };
 }

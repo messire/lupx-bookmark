@@ -9,16 +9,15 @@ import { vi, beforeEach } from "vitest";
 // ── Types ─────────────────────────────────────────────────────────────────
 
 type StorageChange = { oldValue?: unknown; newValue?: unknown };
-type ChangeListener = (
-  changes: Record<string, StorageChange>,
-  area: string,
-) => void;
+type ChangeListener = (changes: Record<string, StorageChange>, area: string) => void;
 type SyncOnlyListener = (changes: Record<string, StorageChange>) => void;
 
 // ── Shared state (reset before every test) ────────────────────────────────
 
-const stores: { sync: Record<string, unknown>; local: Record<string, unknown> } =
-  { sync: {}, local: {} };
+const stores: { sync: Record<string, unknown>; local: Record<string, unknown> } = {
+  sync: {},
+  local: {},
+};
 
 /** Listeners registered via chrome.storage.onChanged (global — all areas). */
 const globalListeners: ChangeListener[] = [];
@@ -52,10 +51,7 @@ export function fireStorageChange(
  * @example
  * seedStorage("local", { accordionGroups: [group1, group2] });
  */
-export function seedStorage(
-  area: "sync" | "local",
-  data: Record<string, unknown>,
-): void {
+export function seedStorage(area: "sync" | "local", data: Record<string, unknown>): void {
   Object.assign(stores[area], data);
 }
 
@@ -89,26 +85,24 @@ function makeGet(area: "sync" | "local") {
 }
 
 function makeSet(area: "sync" | "local") {
-  return vi.fn(
-    (items: Record<string, unknown>, callback?: () => void): Promise<void> => {
-      const store = stores[area];
-      const changes: Record<string, StorageChange> = {};
+  return vi.fn((items: Record<string, unknown>, callback?: () => void): Promise<void> => {
+    const store = stores[area];
+    const changes: Record<string, StorageChange> = {};
 
-      for (const [k, v] of Object.entries(items)) {
-        changes[k] = { oldValue: store[k], newValue: v };
-        store[k] = v;
-      }
+    for (const [k, v] of Object.entries(items)) {
+      changes[k] = { oldValue: store[k], newValue: v };
+      store[k] = v;
+    }
 
-      // Mirror Chrome: set() fires onChanged automatically.
-      globalListeners.forEach((l) => l(changes, area));
-      if (area === "sync") {
-        syncListeners.forEach((l) => l(changes));
-      }
+    // Mirror Chrome: set() fires onChanged automatically.
+    globalListeners.forEach((l) => l(changes, area));
+    if (area === "sync") {
+      syncListeners.forEach((l) => l(changes));
+    }
 
-      callback?.();
-      return Promise.resolve();
-    },
-  );
+    callback?.();
+    return Promise.resolve();
+  });
 }
 
 // ── Reset before every test ───────────────────────────────────────────────

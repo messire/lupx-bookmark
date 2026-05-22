@@ -1,6 +1,7 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
+import prettier from "eslint-config-prettier";
 
 export default tseslint.config(
   // ── Ignored paths ──────────────────────────────────────────────────────
@@ -33,4 +34,7 @@ export default tseslint.config(
       "@typescript-eslint/no-non-null-assertion": "warn",
     },
   },
+
+  // ── Prettier — must be last; disables all ESLint formatting rules ──────
+  prettier,
 );

@@ -83,11 +83,7 @@ export default function SearchBar({ engine, onEngineChange }: SearchBarProps) {
       />
 
       {/* Search button */}
-      <button
-        className={styles.searchBtn}
-        onClick={handleSearch}
-        aria-label="Search"
-      >
+      <button className={styles.searchBtn} onClick={handleSearch} aria-label="Search">
         Search
       </button>
     </div>

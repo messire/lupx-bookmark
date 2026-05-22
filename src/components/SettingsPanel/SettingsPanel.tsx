@@ -12,21 +12,21 @@ interface SettingsPanelProps {
 }
 
 const BG_TYPES: { value: BackgroundType; label: string }[] = [
-  { value: "none",     label: "None"     },
-  { value: "color",    label: "Color"    },
+  { value: "none", label: "None" },
+  { value: "color", label: "Color" },
   { value: "gradient", label: "Gradient" },
-  { value: "image",    label: "Image"    },
+  { value: "image", label: "Image" },
 ];
 
 const CARD_STYLES: { value: CardStyle; label: string; description: string }[] = [
-  { value: "minimal",    label: "Minimal",  description: "Clean, borderless"       },
-  { value: "glass",      label: "Glass",    description: "Frosted blur effect"     },
-  { value: "bento",      label: "Bento",    description: "Solid tiles with shadow" },
-  { value: "icons",      label: "Icons",    description: "Icon-only, square"       },
-  { value: "neon",       label: "Neon",     description: "Synthwave glow"          },
-  { value: "neumorphic", label: "Soft UI",  description: "Extruded press feel"     },
-  { value: "stamp",      label: "Stamp",    description: "Polaroid photo frame"    },
-  { value: "aurora",     label: "Aurora",   description: "Living gradient"         },
+  { value: "minimal", label: "Minimal", description: "Clean, borderless" },
+  { value: "glass", label: "Glass", description: "Frosted blur effect" },
+  { value: "bento", label: "Bento", description: "Solid tiles with shadow" },
+  { value: "icons", label: "Icons", description: "Icon-only, square" },
+  { value: "neon", label: "Neon", description: "Synthwave glow" },
+  { value: "neumorphic", label: "Soft UI", description: "Extruded press feel" },
+  { value: "stamp", label: "Stamp", description: "Polaroid photo frame" },
+  { value: "aurora", label: "Aurora", description: "Living gradient" },
 ];
 
 export default function SettingsPanel({ open, settings, onUpdate, onClose }: SettingsPanelProps) {
@@ -44,8 +44,7 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
   }, [open]);
 
   const hasChanges =
-    oldSettings !== null &&
-    JSON.stringify(oldSettings) !== JSON.stringify(settings);
+    oldSettings !== null && JSON.stringify(oldSettings) !== JSON.stringify(settings);
 
   async function handleUpdate(patch: Partial<Settings>) {
     if (oldSettings === null) setOldSettings({ ...settings });
@@ -95,16 +94,19 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
       <aside className={`${styles.panel} ${open ? styles.panelOpen : ""}`}>
         <header className={styles.header}>
           <div className={styles.headerActions}>
-            <button className={styles.closeBtn} onClick={handleClose} title="Close">✕</button>
+            <button className={styles.closeBtn} onClick={handleClose} title="Close">
+              ✕
+            </button>
             {hasChanges && (
-              <button className={styles.rollbackBtn} onClick={handleRollback}>Rollback</button>
+              <button className={styles.rollbackBtn} onClick={handleRollback}>
+                Rollback
+              </button>
             )}
           </div>
           <h2 className={styles.title}>Settings</h2>
         </header>
 
         <div className={styles.body}>
-
           {/* ── Layout ── */}
           <section className={styles.section}>
             <h3 className={styles.sectionTitle}>Layout</h3>
@@ -112,18 +114,46 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
             <div className={styles.field}>
               <span className={styles.label}>Groups</span>
               <div className={styles.stepper}>
-                <button className={styles.stepBtn} onClick={() => handleUpdate({ accordionCount: Math.max(1, settings.accordionCount - 1) })}>−</button>
+                <button
+                  className={styles.stepBtn}
+                  onClick={() =>
+                    handleUpdate({ accordionCount: Math.max(1, settings.accordionCount - 1) })
+                  }
+                >
+                  −
+                </button>
                 <span className={styles.stepValue}>{settings.accordionCount}</span>
-                <button className={styles.stepBtn} onClick={() => handleUpdate({ accordionCount: Math.min(10, settings.accordionCount + 1) })}>+</button>
+                <button
+                  className={styles.stepBtn}
+                  onClick={() =>
+                    handleUpdate({ accordionCount: Math.min(10, settings.accordionCount + 1) })
+                  }
+                >
+                  +
+                </button>
               </div>
             </div>
 
             <div className={styles.field}>
               <span className={styles.label}>Items per row</span>
               <div className={styles.stepper}>
-                <button className={styles.stepBtn} onClick={() => handleUpdate({ itemsPerRow: Math.max(2, settings.itemsPerRow - 1) })}>−</button>
+                <button
+                  className={styles.stepBtn}
+                  onClick={() =>
+                    handleUpdate({ itemsPerRow: Math.max(2, settings.itemsPerRow - 1) })
+                  }
+                >
+                  −
+                </button>
                 <span className={styles.stepValue}>{settings.itemsPerRow}</span>
-                <button className={styles.stepBtn} onClick={() => handleUpdate({ itemsPerRow: Math.min(10, settings.itemsPerRow + 1) })}>+</button>
+                <button
+                  className={styles.stepBtn}
+                  onClick={() =>
+                    handleUpdate({ itemsPerRow: Math.min(10, settings.itemsPerRow + 1) })
+                  }
+                >
+                  +
+                </button>
               </div>
             </div>
 
@@ -215,7 +245,9 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
                     type="color"
                     className={styles.colorInput}
                     value={bg.gradient.from}
-                    onChange={(e) => updateBackground({ gradient: { ...bg.gradient, from: e.target.value } })}
+                    onChange={(e) =>
+                      updateBackground({ gradient: { ...bg.gradient, from: e.target.value } })
+                    }
                   />
                 </div>
                 <div className={styles.field}>
@@ -224,7 +256,9 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
                     type="color"
                     className={styles.colorInput}
                     value={bg.gradient.to}
-                    onChange={(e) => updateBackground({ gradient: { ...bg.gradient, to: e.target.value } })}
+                    onChange={(e) =>
+                      updateBackground({ gradient: { ...bg.gradient, to: e.target.value } })
+                    }
                   />
                 </div>
                 <div className={styles.field}>
@@ -235,7 +269,11 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
                     max={360}
                     value={bg.gradient.angle}
                     className={styles.rangeInput}
-                    onChange={(e) => updateBackground({ gradient: { ...bg.gradient, angle: Number(e.target.value) } })}
+                    onChange={(e) =>
+                      updateBackground({
+                        gradient: { ...bg.gradient, angle: Number(e.target.value) },
+                      })
+                    }
                   />
                 </div>
               </>
@@ -295,7 +333,6 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
               </>
             )}
           </section>
-
         </div>
       </aside>
     </>
