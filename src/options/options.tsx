@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { useSettings } from "../newtab/useSettings";
+import ErrorBoundary from "../components/ErrorBoundary/ErrorBoundary";
 import styles from "./options.module.css";
 
 function OptionsApp() {
@@ -105,6 +106,8 @@ if (!root) throw new Error("#root element not found");
 
 createRoot(root).render(
   <StrictMode>
-    <OptionsApp />
+    <ErrorBoundary>
+      <OptionsApp />
+    </ErrorBoundary>
   </StrictMode>,
 );

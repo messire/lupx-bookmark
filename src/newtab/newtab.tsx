@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { useAccordions } from "./useAccordions";
 import { useSettings } from "./useSettings";
 import { useBackground } from "./useBackground";
+import ErrorBoundary from "../components/ErrorBoundary/ErrorBoundary";
 import AccordionGroup from "../components/AccordionGroup/AccordionGroup";
 import AddSlotModal from "../components/AddSlotModal/AddSlotModal";
 import SettingsPanel from "../components/SettingsPanel/SettingsPanel";
@@ -228,6 +229,8 @@ if (!root) throw new Error("#root element not found");
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );
