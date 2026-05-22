@@ -47,7 +47,9 @@
   cursor: pointer;
   opacity: 0.45;
   flex-shrink: 0;
-  transition: opacity 0.12s, background 0.12s;
+  transition:
+    opacity 0.12s,
+    background 0.12s;
 }
 
 .engineBtn:hover {
@@ -103,7 +105,9 @@
   font-family: inherit;
   cursor: pointer;
   flex-shrink: 0;
-  transition: opacity 0.12s, transform 0.1s;
+  transition:
+    opacity 0.12s,
+    transform 0.1s;
 }
 
 .searchBtn:hover {

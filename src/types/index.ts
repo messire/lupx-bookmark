@@ -25,13 +25,13 @@ export type BackgroundType = "none" | "color" | "gradient" | "image";
 
 export interface Background {
   type: BackgroundType;
-  color: string;           // hex color for "color" type
+  color: string; // hex color for "color" type
   gradient: {
-    from: string;          // hex color
-    to: string;            // hex color
-    angle: number;         // degrees 0–360
+    from: string; // hex color
+    to: string; // hex color
+    angle: number; // degrees 0–360
   };
-  imageUrl: string;        // URL for "image" type via external link
+  imageUrl: string; // URL for "image" type via external link
   // File upload data is stored separately in chrome.storage.local under "backgroundImage"
 }
 
@@ -52,9 +52,9 @@ export const MAX_ITEMS_PER_ACCORDION = 16;
 
 // User-facing settings stored in chrome.storage.sync
 export interface Settings {
-  accordionCount: number;  // how many accordion groups (default: 3)
-  itemsPerRow: number;     // bookmark cards per row (default: 5)
-  showTitles: boolean;     // show titles below cards (default: true)
+  accordionCount: number; // how many accordion groups (default: 3)
+  itemsPerRow: number; // bookmark cards per row (default: 5)
+  showTitles: boolean; // show titles below cards (default: true)
   theme: "light" | "dark" | "system";
   background: Background;
   cardStyle: CardStyle;

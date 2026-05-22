@@ -35,8 +35,19 @@ export function useSettings(): UseSettingsResult {
   // useCallback([], []) is correct: functional setSettings needs no snapshot of
   // `settings`, so updateSettings has no dependency on component state at all.
   const updateSettings = useCallback(async (patch: Partial<Settings>) => {
-    setSettings((prev) => ({ ...prev, ...patch }));
-    await chrome.storage.sync.set(patch);
+    let snapshot: Settings | undefined;
+    setSettings((prev) => {
+      snapshot = prev;
+      return { ...prev, ...patch };
+    });
+    try {
+      await chrome.storage.sync.set(patch);
+    } catch (err) {
+      // Roll back optimistic update — storage write failed (e.g. quota exceeded)
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[lupx] Failed to save settings:", message);
+      if (snapshot !== undefined) setSettings(snapshot);
+    }
   }, []);
 
   return { settings, updateSettings };

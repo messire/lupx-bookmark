@@ -55,7 +55,13 @@ async function loadLegacy(): Promise<SpeedDialSlot[] | null> {
 }
 
 async function saveToStorage(groups: AccordionGroup[]): Promise<void> {
-  await chrome.storage.local.set({ [STORAGE_KEY]: groups });
+  try {
+    await chrome.storage.local.set({ [STORAGE_KEY]: groups });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[lupx] Failed to save bookmarks:", message);
+    throw err;
+  }
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────
@@ -69,7 +75,12 @@ export interface UseAccordionsResult {
    * Same group → swap positions.
    * Different groups → remove from source, insert at toIdx in target.
    */
-  moveItem: (fromGroupId: string, fromIdx: number, toGroupId: string, toIdx: number) => Promise<void>;
+  moveItem: (
+    fromGroupId: string,
+    fromIdx: number,
+    toGroupId: string,
+    toIdx: number,
+  ) => Promise<void>;
   /** Rename a group (persists immediately). */
   renameGroup: (groupId: string, name: string) => Promise<void>;
   /** Toggle the collapsed state of a group. */
@@ -92,14 +103,25 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
   // Refs so effects can read the latest values without stale closures.
   const groupsRef = useRef<AccordionGroup[]>([]);
   const isLoadedRef = useRef(false);
+  // Always reflects the latest accordionCount so the initial-load effect can
+  // read it without listing it as a dep (we only want that effect to run once).
+  const accordionCountRef = useRef(accordionCount);
+  accordionCountRef.current = accordionCount;
 
   // ── Persist helper ────────────────────────────────────────────────────
   // useCallback([], []) is correct: only touches groupsRef (stable ref) and
   // setGroups (stable setter) — no component state in the dep chain.
   const persist = useCallback(async (next: AccordionGroup[]) => {
+    const prev = groupsRef.current;
     groupsRef.current = next;
     setGroups(next);
-    await saveToStorage(next);
+    try {
+      await saveToStorage(next);
+    } catch {
+      // Roll back UI to the last successfully persisted state
+      groupsRef.current = prev;
+      setGroups(prev);
+    }
   }, []);
 
   // ── Initial load + migration ──────────────────────────────────────────
@@ -115,9 +137,10 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
 
         if (legacy?.some((s) => s.url)) {
           const first = makeGroup("Bookmarks");
-          first.items = legacy
-            .filter((s) => s.url)
-            .map((s) => makeSlot(s.url!, s.title ?? s.url!));
+          first.items = legacy.flatMap((s) => {
+            if (!s.url) return [];
+            return [makeSlot(s.url, s.title ?? s.url)];
+          });
           loaded = [first];
         } else {
           // Fresh install — default starter groups
@@ -128,14 +151,15 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
       if (cancelled) return;
 
       // Sync with current accordionCount on first load
-      const synced = applyCount(loaded, accordionCount);
+      const synced = applyCount(loaded, accordionCountRef.current);
       isLoadedRef.current = true;
       await persist(synced);
     })();
 
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [persist]);
 
   // ── Sync count when accordionCount changes ────────────────────────────
   useEffect(() => {
@@ -144,15 +168,11 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
     if (synced !== groupsRef.current) {
       persist(synced);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accordionCount]);
+  }, [accordionCount, persist]);
 
   // ── Listen for changes from other tabs ────────────────────────────────
   useEffect(() => {
-    function onChanged(
-      changes: Record<string, chrome.storage.StorageChange>,
-      area: string,
-    ) {
+    function onChanged(changes: Record<string, chrome.storage.StorageChange>, area: string) {
       if (area === "local" && STORAGE_KEY in changes) {
         const updated = changes[STORAGE_KEY].newValue as AccordionGroup[];
         groupsRef.current = updated;
@@ -167,64 +187,78 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
   // All operations read only groupsRef.current (stable ref) and call persist
   // (stable callback), so they can all have [] deps and be stable themselves.
 
-  const addItem = useCallback(async (groupId: string, url: string, title: string) => {
-    const next = groupsRef.current.map((g) =>
-      g.id !== groupId ? g : { ...g, items: [...g.items, makeSlot(url, title)] },
-    );
-    await persist(next);
-  }, [persist]);
+  const addItem = useCallback(
+    async (groupId: string, url: string, title: string) => {
+      const next = groupsRef.current.map((g) =>
+        g.id !== groupId ? g : { ...g, items: [...g.items, makeSlot(url, title)] },
+      );
+      await persist(next);
+    },
+    [persist],
+  );
 
-  const moveItem = useCallback(async (
-    fromGroupId: string,
-    fromIdx: number,
-    toGroupId: string,
-    toIdx: number,
-  ) => {
-    if (fromGroupId === toGroupId && fromIdx === toIdx) return;
+  const moveItem = useCallback(
+    async (fromGroupId: string, fromIdx: number, toGroupId: string, toIdx: number) => {
+      if (fromGroupId === toGroupId && fromIdx === toIdx) return;
 
-    const next = groupsRef.current.map((g) => ({ ...g, items: [...g.items] }));
-    const fromGroup = next.find((g) => g.id === fromGroupId)!;
-    const toGroup = next.find((g) => g.id === toGroupId)!;
+      const next = groupsRef.current.map((g) => ({ ...g, items: [...g.items] }));
+      const fromGroup = next.find((g) => g.id === fromGroupId);
+      const toGroup = next.find((g) => g.id === toGroupId);
+      if (!fromGroup || !toGroup) return;
 
-    if (fromGroupId === toGroupId) {
-      // Within group: swap
-      const items = fromGroup.items;
-      if (toIdx >= items.length) return; // dropping on add-card within same group: no-op
-      [items[fromIdx], items[toIdx]] = [items[toIdx], items[fromIdx]];
-    } else {
-      // Cross-group: extract then insert
-      const [item] = fromGroup.items.splice(fromIdx, 1);
-      toGroup.items.splice(Math.min(toIdx, toGroup.items.length), 0, item);
-    }
+      if (fromGroupId === toGroupId) {
+        // Within group: swap
+        const items = fromGroup.items;
+        if (toIdx >= items.length) return; // dropping on add-card within same group: no-op
+        [items[fromIdx], items[toIdx]] = [items[toIdx], items[fromIdx]];
+      } else {
+        // Cross-group: extract then insert
+        const [item] = fromGroup.items.splice(fromIdx, 1);
+        toGroup.items.splice(Math.min(toIdx, toGroup.items.length), 0, item);
+      }
 
-    await persist(next);
-  }, [persist]);
+      await persist(next);
+    },
+    [persist],
+  );
 
-  const renameGroup = useCallback(async (groupId: string, name: string) => {
-    const next = groupsRef.current.map((g) =>
-      g.id !== groupId ? g : { ...g, name: name.trim() || "New" },
-    );
-    await persist(next);
-  }, [persist]);
+  const renameGroup = useCallback(
+    async (groupId: string, name: string) => {
+      const next = groupsRef.current.map((g) =>
+        g.id !== groupId ? g : { ...g, name: name.trim() || "New" },
+      );
+      await persist(next);
+    },
+    [persist],
+  );
 
-  const toggleCollapse = useCallback(async (groupId: string) => {
-    const next = groupsRef.current.map((g) =>
-      g.id !== groupId ? g : { ...g, collapsed: !g.collapsed },
-    );
-    await persist(next);
-  }, [persist]);
+  const toggleCollapse = useCallback(
+    async (groupId: string) => {
+      const next = groupsRef.current.map((g) =>
+        g.id !== groupId ? g : { ...g, collapsed: !g.collapsed },
+      );
+      await persist(next);
+    },
+    [persist],
+  );
 
-  const swapGroups = useCallback(async (idxA: number, idxB: number) => {
-    if (idxA === idxB) return;
-    const next = [...groupsRef.current];
-    [next[idxA], next[idxB]] = [next[idxB], next[idxA]];
-    await persist(next);
-  }, [persist]);
+  const swapGroups = useCallback(
+    async (idxA: number, idxB: number) => {
+      if (idxA === idxB) return;
+      const next = [...groupsRef.current];
+      [next[idxA], next[idxB]] = [next[idxB], next[idxA]];
+      await persist(next);
+    },
+    [persist],
+  );
 
-  const deleteGroup = useCallback(async (groupId: string) => {
-    const next = groupsRef.current.filter((g) => g.id !== groupId);
-    await persist(next);
-  }, [persist]);
+  const deleteGroup = useCallback(
+    async (groupId: string) => {
+      const next = groupsRef.current.filter((g) => g.id !== groupId);
+      await persist(next);
+    },
+    [persist],
+  );
 
   return { groups, addItem, moveItem, renameGroup, toggleCollapse, swapGroups, deleteGroup };
 }

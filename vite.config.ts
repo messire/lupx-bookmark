@@ -12,7 +12,9 @@ const wallpapersManifestPlugin = {
   buildStart() {
     const dir = resolve("public/wallpapers");
     const files = existsSync(dir)
-      ? readdirSync(dir).filter((f) => IMAGE_EXT.test(f)).sort()
+      ? readdirSync(dir)
+          .filter((f) => IMAGE_EXT.test(f))
+          .sort()
       : [];
     writeFileSync(resolve("public/wallpapers.json"), JSON.stringify(files));
   },

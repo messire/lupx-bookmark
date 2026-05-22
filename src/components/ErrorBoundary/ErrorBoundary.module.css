@@ -1,0 +1,55 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  font-family: system-ui, sans-serif;
+  color: var(--color-text, #e0e0e0);
+  background: var(--color-bg, #0f0f17);
+  text-align: center;
+  gap: 16px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.message {
+  font-size: 0.95rem;
+  opacity: 0.7;
+  max-width: 480px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.detail {
+  font-size: 0.8rem;
+  opacity: 0.5;
+  font-family: monospace;
+  background: rgba(255 255 255 / 0.05);
+  padding: 10px 16px;
+  border-radius: 6px;
+  max-width: 560px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.btn {
+  margin-top: 8px;
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: 1px solid rgba(255 255 255 / 0.15);
+  background: rgba(255 255 255 / 0.08);
+  color: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn:hover {
+  background: rgba(255 255 255 / 0.15);
+}

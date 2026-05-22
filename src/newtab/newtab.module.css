@@ -70,7 +70,6 @@ body {
   margin-top: 150px;
 }
 
-
 .settingsBtn {
   position: fixed;
   bottom: 20px;
@@ -86,7 +85,9 @@ body {
   align-items: center;
   justify-content: center;
   opacity: 0.25;
-  transition: opacity 0.15s, background 0.15s;
+  transition:
+    opacity 0.15s,
+    background 0.15s;
   z-index: 10;
 }
 

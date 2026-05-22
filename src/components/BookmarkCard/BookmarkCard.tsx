@@ -6,14 +6,14 @@ import styles from "./BookmarkCard.module.css";
 const PIN_ICON = chrome.runtime.getURL("icons/pin.svg");
 
 const STYLE_CLASS: Record<CardStyle, string> = {
-  minimal:    styles.styleMinimal,
-  glass:      styles.styleGlass,
-  bento:      styles.styleBento,
-  icons:      styles.styleIcons,
-  neon:       styles.styleNeon,
+  minimal: styles.styleMinimal,
+  glass: styles.styleGlass,
+  bento: styles.styleBento,
+  icons: styles.styleIcons,
+  neon: styles.styleNeon,
   neumorphic: styles.styleNeumorphic,
-  stamp:      styles.styleStamp,
-  aurora:     styles.styleAurora,
+  stamp: styles.styleStamp,
+  aurora: styles.styleAurora,
 };
 
 interface BookmarkCardProps {
@@ -57,13 +57,15 @@ export default function BookmarkCard({
     );
   }
 
-  // Filled slot
-  const faviconUrl = getFaviconUrl(slot.url, 64);
+  // Filled slot — slot.url is narrowed to string by the guard above,
+  // but closures don't preserve property narrowing, so we capture it.
+  const url = slot.url;
+  const faviconUrl = getFaviconUrl(url, 64);
   const iconSrc = !faviconUrl || imgError ? PIN_ICON : faviconUrl;
 
   function handleClick(e: React.MouseEvent) {
     e.preventDefault();
-    window.location.href = slot.url!;
+    window.location.href = url;
   }
 
   return (
@@ -78,12 +80,7 @@ export default function BookmarkCard({
       onDrop={onDrop}
     >
       <div className={styles.thumbnail}>
-        <img
-          src={iconSrc}
-          alt=""
-          className={styles.favicon}
-          onError={() => setImgError(true)}
-        />
+        <img src={iconSrc} alt="" className={styles.favicon} onError={() => setImgError(true)} />
       </div>
       {showTitle && cardStyle !== "icons" && (
         <span className={styles.title}>{slot.title ?? slot.url}</span>

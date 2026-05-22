@@ -7,6 +7,13 @@ interface AddSlotModalProps {
   onClose: () => void;
 }
 
+function toSuggestions(items: chrome.history.HistoryItem[]): HistorySuggestion[] {
+  return items.flatMap((item) => {
+    if (!item.url || !item.title) return [];
+    return [{ url: item.url, title: item.title, visitCount: item.visitCount ?? 0 }];
+  });
+}
+
 export default function AddSlotModal({ onConfirm, onClose }: AddSlotModalProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<HistorySuggestion[]>([]);
@@ -30,27 +37,15 @@ export default function AddSlotModal({ onConfirm, onClose }: AddSlotModalProps) 
   useEffect(() => {
     if (!query.trim()) {
       // Show top visited sites when input is empty
-      chrome.history.search(
-        { text: "", maxResults: 6, startTime: 0 },
-        (items) => setSuggestions(toSuggestions(items))
+      chrome.history.search({ text: "", maxResults: 6, startTime: 0 }, (items) =>
+        setSuggestions(toSuggestions(items)),
       );
       return;
     }
-    chrome.history.search(
-      { text: query, maxResults: 6, startTime: 0 },
-      (items) => setSuggestions(toSuggestions(items))
+    chrome.history.search({ text: query, maxResults: 6, startTime: 0 }, (items) =>
+      setSuggestions(toSuggestions(items)),
     );
   }, [query]);
-
-  function toSuggestions(items: chrome.history.HistoryItem[]): HistorySuggestion[] {
-    return items
-      .filter((item) => item.url && item.title)
-      .map((item) => ({
-        url: item.url!,
-        title: item.title!,
-        visitCount: item.visitCount ?? 0,
-      }));
-  }
 
   function confirm(url: string, title: string) {
     const normalized = url.startsWith("http") ? url : `https://${url}`;
@@ -81,17 +76,16 @@ export default function AddSlotModal({ onConfirm, onClose }: AddSlotModalProps) 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <button type="submit" className={styles.addButton}>Add</button>
+          <button type="submit" className={styles.addButton}>
+            Add
+          </button>
         </form>
 
         {suggestions.length > 0 && (
           <ul className={styles.suggestions}>
             {suggestions.map((s) => (
               <li key={s.url}>
-                <button
-                  className={styles.suggestion}
-                  onClick={() => handleSuggestionClick(s)}
-                >
+                <button className={styles.suggestion} onClick={() => handleSuggestionClick(s)}>
                   <span className={styles.suggestionTitle}>{s.title}</span>
                   <span className={styles.suggestionUrl}>{s.url}</span>
                 </button>

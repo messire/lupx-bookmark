@@ -74,7 +74,9 @@
   color: var(--color-text);
   font-size: 12px;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
   opacity: 0.7;
 }
 
@@ -321,7 +323,9 @@
   cursor: pointer;
   background: none;
   aspect-ratio: 16 / 9;
-  transition: border-color 0.12s, transform 0.12s;
+  transition:
+    border-color 0.12s,
+    transform 0.12s;
 }
 
 .wallpaperThumb img {
@@ -360,7 +364,9 @@
   color: var(--color-text);
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.12s, background 0.12s;
+  transition:
+    border-color 0.12s,
+    background 0.12s;
 }
 
 .cardStyleBtn:hover {
