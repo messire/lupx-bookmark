@@ -5,6 +5,9 @@ import type { AccordionGroup as AccordionGroupType, CardStyle, SpeedDialSlot } f
 import { MAX_ITEMS_PER_ACCORDION } from "../../types";
 import styles from "./AccordionGroup.module.css";
 
+/** A slot that is guaranteed to have a URL (used for mini icons in collapsed state). */
+type FilledSlot = SpeedDialSlot & { url: string };
+
 const PIN_ICON = chrome.runtime.getURL("icons/pin.svg");
 
 // Empty slot sentinel used for the "add" card
@@ -205,7 +208,7 @@ export default function AccordionGroup({
         {/* Mini favicons (shown only when collapsed) */}
         {group.collapsed && (
           <div className={styles.miniIcons}>
-            {filledItems.filter((i) => i.url).map((item) => (
+            {filledItems.filter((i): i is FilledSlot => i.url !== null).map((item) => (
               <MiniIcon key={item.id} item={item} />
             ))}
           </div>
@@ -283,18 +286,18 @@ export default function AccordionGroup({
 
 // ── Mini favicon (16×16) for collapsed state ──────────────────────────────
 
-function MiniIcon({ item }: { item: SpeedDialSlot }) {
+function MiniIcon({ item }: { item: FilledSlot }) {
   const [error, setError] = useState(false);
-  const src = !error && item.url ? (getFaviconUrl(item.url, 16) ?? PIN_ICON) : PIN_ICON;
+  const src = !error ? (getFaviconUrl(item.url, 16) ?? PIN_ICON) : PIN_ICON;
 
   return (
     <a
-      href={item.url!}
+      href={item.url}
       className={styles.miniIconLink}
-      title={item.title ?? item.url!}
+      title={item.title ?? item.url}
       onClick={(e) => {
         e.preventDefault();
-        window.location.href = item.url!;
+        window.location.href = item.url;
       }}
     >
       <img

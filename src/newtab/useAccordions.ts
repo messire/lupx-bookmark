@@ -119,9 +119,10 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
 
         if (legacy?.some((s) => s.url)) {
           const first = makeGroup("Bookmarks");
-          first.items = legacy
-            .filter((s) => s.url)
-            .map((s) => makeSlot(s.url!, s.title ?? s.url!));
+          first.items = legacy.flatMap((s) => {
+            if (!s.url) return [];
+            return [makeSlot(s.url, s.title ?? s.url)];
+          });
           loaded = [first];
         } else {
           // Fresh install — default starter groups
@@ -185,8 +186,9 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
     if (fromGroupId === toGroupId && fromIdx === toIdx) return;
 
     const next = groupsRef.current.map((g) => ({ ...g, items: [...g.items] }));
-    const fromGroup = next.find((g) => g.id === fromGroupId)!;
-    const toGroup = next.find((g) => g.id === toGroupId)!;
+    const fromGroup = next.find((g) => g.id === fromGroupId);
+    const toGroup = next.find((g) => g.id === toGroupId);
+    if (!fromGroup || !toGroup) return;
 
     if (fromGroupId === toGroupId) {
       // Within group: swap

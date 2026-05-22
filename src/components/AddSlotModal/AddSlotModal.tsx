@@ -8,13 +8,10 @@ interface AddSlotModalProps {
 }
 
 function toSuggestions(items: chrome.history.HistoryItem[]): HistorySuggestion[] {
-  return items
-    .filter((item) => item.url && item.title)
-    .map((item) => ({
-      url: item.url!,
-      title: item.title!,
-      visitCount: item.visitCount ?? 0,
-    }));
+  return items.flatMap((item) => {
+    if (!item.url || !item.title) return [];
+    return [{ url: item.url, title: item.title, visitCount: item.visitCount ?? 0 }];
+  });
 }
 
 export default function AddSlotModal({ onConfirm, onClose }: AddSlotModalProps) {

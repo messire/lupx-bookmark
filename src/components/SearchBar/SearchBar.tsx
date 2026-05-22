@@ -43,7 +43,7 @@ export default function SearchBar({ engine, onEngineChange }: SearchBarProps) {
   function handleSearch() {
     const q = query.trim();
     if (!q) return;
-    const eng = ENGINES.find((e) => e.value === engine)!;
+    const eng = ENGINES.find((e) => e.value === engine) ?? ENGINES[0];
     window.location.href = eng.buildUrl(q);
   }
 

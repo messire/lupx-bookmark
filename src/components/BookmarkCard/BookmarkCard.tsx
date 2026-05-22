@@ -57,13 +57,15 @@ export default function BookmarkCard({
     );
   }
 
-  // Filled slot
-  const faviconUrl = getFaviconUrl(slot.url, 64);
+  // Filled slot — slot.url is narrowed to string by the guard above,
+  // but closures don't preserve property narrowing, so we capture it.
+  const url = slot.url;
+  const faviconUrl = getFaviconUrl(url, 64);
   const iconSrc = !faviconUrl || imgError ? PIN_ICON : faviconUrl;
 
   function handleClick(e: React.MouseEvent) {
     e.preventDefault();
-    window.location.href = slot.url!;
+    window.location.href = url;
   }
 
   return (
