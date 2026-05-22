@@ -1,0 +1,181 @@
+/* ══════════════════════════════════════════════════════════════════════
+   SearchBar — matches accordion sizing and data-bg theming
+   ══════════════════════════════════════════════════════════════════════ */
+
+.bar {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  border-radius: 12px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-card-bg);
+  color: var(--color-text);
+  overflow: hidden;
+  padding: 0 6px 0 10px;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.bar:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent);
+}
+
+/* ── Engine selector ─────────────────────────────────────────────────── */
+.engineGroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  padding-right: 10px;
+  margin-right: 4px;
+  border-right: 1px solid var(--color-border);
+}
+
+.engineBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.45;
+  flex-shrink: 0;
+  transition: opacity 0.12s, background 0.12s;
+}
+
+.engineBtn:hover {
+  opacity: 0.85;
+  background: rgba(128, 128, 128, 0.12);
+}
+
+.engineActive {
+  background: rgba(128, 128, 128, 0.15) !important;
+  opacity: 1 !important;
+  box-shadow: inset 0 0 0 1.5px var(--color-accent);
+}
+
+.engineIcon {
+  display: block;
+  border-radius: 3px;
+}
+
+.engineFallback {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── Search input ────────────────────────────────────────────────────── */
+.input {
+  flex: 1;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  padding: 0 10px;
+  min-width: 0;
+}
+
+.input::placeholder {
+  color: var(--color-subtle);
+}
+
+/* ── Search button ───────────────────────────────────────────────────── */
+.searchBtn {
+  height: 34px;
+  padding: 0 20px;
+  border-radius: 8px;
+  border: none;
+  background: var(--color-accent);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.12s, transform 0.1s;
+}
+
+.searchBtn:hover {
+  opacity: 0.85;
+}
+
+.searchBtn:active {
+  transform: scale(0.97);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   data-bg overrides — same strategy as AccordionGroup
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Dark solid background ───────────────────────────────────────────── */
+:root[data-bg="dark"] .bar {
+  background: rgba(10, 10, 15, 0.72);
+  border-color: rgba(255, 255, 255, 0.13);
+  color: #efefef;
+}
+
+:root[data-bg="dark"] .bar:focus-within {
+  border-color: #7b9bff;
+  box-shadow: 0 0 0 2px rgba(123, 155, 255, 0.2);
+}
+
+:root[data-bg="dark"] .engineGroup {
+  border-right-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-bg="dark"] .engineActive {
+  box-shadow: inset 0 0 0 1.5px #7b9bff;
+}
+
+/* ── Image / gradient background ────────────────────────────────────── */
+:root[data-bg="image"] .bar {
+  background: rgba(0, 0, 0, 0.52);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+:root[data-bg="image"] .bar:focus-within {
+  border-color: #7b9bff;
+  box-shadow: 0 0 0 2px rgba(123, 155, 255, 0.25);
+}
+
+:root[data-bg="image"] .engineGroup {
+  border-right-color: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-bg="image"] .input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ── Light solid background ──────────────────────────────────────────── */
+:root[data-bg="light"] .bar {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #111111;
+}
+
+:root[data-bg="light"] .bar:focus-within {
+  border-color: #4f6ef7;
+  box-shadow: 0 0 0 2px rgba(79, 110, 247, 0.18);
+}
+
+:root[data-bg="light"] .engineGroup {
+  border-right-color: rgba(0, 0, 0, 0.08);
+}
+
+:root[data-bg="light"] .engineActive {
+  box-shadow: inset 0 0 0 1.5px #4f6ef7;
+}

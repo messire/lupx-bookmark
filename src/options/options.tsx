@@ -16,41 +16,39 @@ function OptionsApp() {
       <main className={styles.form}>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Grid</h2>
+          <h2 className={styles.sectionTitle}>Layout</h2>
 
           <label className={styles.field}>
-            <span className={styles.label}>Columns</span>
+            <span className={styles.label}>Groups</span>
             <div className={styles.stepper}>
               <button
                 className={styles.stepBtn}
-                onClick={() => updateSettings({ columns: Math.max(1, settings.columns - 1) })}
+                onClick={() => updateSettings({ accordionCount: Math.max(1, settings.accordionCount - 1) })}
               >−</button>
-              <span className={styles.stepValue}>{settings.columns}</span>
+              <span className={styles.stepValue}>{settings.accordionCount}</span>
               <button
                 className={styles.stepBtn}
-                onClick={() => updateSettings({ columns: Math.min(10, settings.columns + 1) })}
+                onClick={() => updateSettings({ accordionCount: Math.min(10, settings.accordionCount + 1) })}
               >+</button>
             </div>
           </label>
 
           <label className={styles.field}>
-            <span className={styles.label}>Rows</span>
+            <span className={styles.label}>Items per row</span>
             <div className={styles.stepper}>
               <button
                 className={styles.stepBtn}
-                onClick={() => updateSettings({ rows: Math.max(1, settings.rows - 1) })}
+                onClick={() => updateSettings({ itemsPerRow: Math.max(2, settings.itemsPerRow - 1) })}
               >−</button>
-              <span className={styles.stepValue}>{settings.rows}</span>
+              <span className={styles.stepValue}>{settings.itemsPerRow}</span>
               <button
                 className={styles.stepBtn}
-                onClick={() => updateSettings({ rows: Math.min(10, settings.rows + 1) })}
+                onClick={() => updateSettings({ itemsPerRow: Math.min(10, settings.itemsPerRow + 1) })}
               >+</button>
             </div>
           </label>
 
-          <div className={styles.hint}>
-            Total slots: {settings.columns * settings.rows}
-          </div>
+          <div className={styles.hint}>Max 16 items per group</div>
         </section>
 
         <section className={styles.section}>

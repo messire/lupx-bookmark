@@ -6,10 +6,14 @@ import styles from "./BookmarkCard.module.css";
 const PIN_ICON = chrome.runtime.getURL("icons/pin.svg");
 
 const STYLE_CLASS: Record<CardStyle, string> = {
-  minimal: styles.styleMinimal,
-  glass: styles.styleGlass,
-  bento: styles.styleBento,
-  icons: styles.styleIcons,
+  minimal:    styles.styleMinimal,
+  glass:      styles.styleGlass,
+  bento:      styles.styleBento,
+  icons:      styles.styleIcons,
+  neon:       styles.styleNeon,
+  neumorphic: styles.styleNeumorphic,
+  stamp:      styles.styleStamp,
+  aurora:     styles.styleAurora,
 };
 
 interface BookmarkCardProps {

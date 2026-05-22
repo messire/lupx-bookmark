@@ -19,10 +19,14 @@ const BG_TYPES: { value: BackgroundType; label: string }[] = [
 ];
 
 const CARD_STYLES: { value: CardStyle; label: string; description: string }[] = [
-  { value: "minimal", label: "Minimal",  description: "Clean, borderless" },
-  { value: "glass",   label: "Glass",    description: "Frosted blur effect" },
-  { value: "bento",   label: "Bento",    description: "Solid tiles with shadow" },
-  { value: "icons",   label: "Icons",    description: "Icon-only, square" },
+  { value: "minimal",    label: "Minimal",  description: "Clean, borderless"       },
+  { value: "glass",      label: "Glass",    description: "Frosted blur effect"     },
+  { value: "bento",      label: "Bento",    description: "Solid tiles with shadow" },
+  { value: "icons",      label: "Icons",    description: "Icon-only, square"       },
+  { value: "neon",       label: "Neon",     description: "Synthwave glow"          },
+  { value: "neumorphic", label: "Soft UI",  description: "Extruded press feel"     },
+  { value: "stamp",      label: "Stamp",    description: "Polaroid photo frame"    },
+  { value: "aurora",     label: "Aurora",   description: "Living gradient"         },
 ];
 
 export default function SettingsPanel({ open, settings, onUpdate, onClose }: SettingsPanelProps) {
@@ -96,29 +100,29 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
 
         <div className={styles.body}>
 
-          {/* ── Grid ── */}
+          {/* ── Layout ── */}
           <section className={styles.section}>
-            <h3 className={styles.sectionTitle}>Grid</h3>
+            <h3 className={styles.sectionTitle}>Layout</h3>
 
             <div className={styles.field}>
-              <span className={styles.label}>Columns</span>
+              <span className={styles.label}>Groups</span>
               <div className={styles.stepper}>
-                <button className={styles.stepBtn} onClick={() => handleUpdate({ columns: Math.max(1, settings.columns - 1) })}>−</button>
-                <span className={styles.stepValue}>{settings.columns}</span>
-                <button className={styles.stepBtn} onClick={() => handleUpdate({ columns: Math.min(8, settings.columns + 1) })}>+</button>
+                <button className={styles.stepBtn} onClick={() => handleUpdate({ accordionCount: Math.max(1, settings.accordionCount - 1) })}>−</button>
+                <span className={styles.stepValue}>{settings.accordionCount}</span>
+                <button className={styles.stepBtn} onClick={() => handleUpdate({ accordionCount: Math.min(10, settings.accordionCount + 1) })}>+</button>
               </div>
             </div>
 
             <div className={styles.field}>
-              <span className={styles.label}>Rows</span>
+              <span className={styles.label}>Items per row</span>
               <div className={styles.stepper}>
-                <button className={styles.stepBtn} onClick={() => handleUpdate({ rows: Math.max(1, settings.rows - 1) })}>−</button>
-                <span className={styles.stepValue}>{settings.rows}</span>
-                <button className={styles.stepBtn} onClick={() => handleUpdate({ rows: Math.min(8, settings.rows + 1) })}>+</button>
+                <button className={styles.stepBtn} onClick={() => handleUpdate({ itemsPerRow: Math.max(2, settings.itemsPerRow - 1) })}>−</button>
+                <span className={styles.stepValue}>{settings.itemsPerRow}</span>
+                <button className={styles.stepBtn} onClick={() => handleUpdate({ itemsPerRow: Math.min(10, settings.itemsPerRow + 1) })}>+</button>
               </div>
             </div>
 
-            <div className={styles.hint}>Total slots: {settings.columns * settings.rows}</div>
+            <div className={styles.hint}>Max 16 items per group</div>
           </section>
 
           {/* ── Appearance ── */}

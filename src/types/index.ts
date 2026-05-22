@@ -1,10 +1,16 @@
-// One cell in the speed dial grid.
-// Empty slot: url and title are null.
-// Filled slot: both url and title are set.
+// One bookmark in a group.
 export interface SpeedDialSlot {
   id: string;
   url: string | null;
   title: string | null;
+}
+
+// A named accordion group containing an ordered list of bookmarks.
+export interface AccordionGroup {
+  id: string;
+  name: string;
+  collapsed: boolean;
+  items: SpeedDialSlot[];
 }
 
 // A history suggestion shown while the user types in AddSlotModal
@@ -29,16 +35,30 @@ export interface Background {
   // File upload data is stored separately in chrome.storage.local under "backgroundImage"
 }
 
-export type CardStyle = "minimal" | "glass" | "bento" | "icons";
+export type CardStyle =
+  | "minimal"
+  | "glass"
+  | "bento"
+  | "icons"
+  | "neon"
+  | "neumorphic"
+  | "stamp"
+  | "aurora";
+
+export type SearchEngine = "google" | "yandex" | "duckduckgo";
+
+/** Hard-coded maximum bookmarks per accordion group. */
+export const MAX_ITEMS_PER_ACCORDION = 16;
 
 // User-facing settings stored in chrome.storage.sync
 export interface Settings {
-  columns: number;         // columns in the grid (default: 4)
-  rows: number;            // rows in the grid (default: 2); total slots = columns × rows
+  accordionCount: number;  // how many accordion groups (default: 3)
+  itemsPerRow: number;     // bookmark cards per row (default: 5)
   showTitles: boolean;     // show titles below cards (default: true)
   theme: "light" | "dark" | "system";
   background: Background;
   cardStyle: CardStyle;
+  searchEngine: SearchEngine;
 }
 
 export const DEFAULT_BACKGROUND: Background = {
@@ -49,14 +69,11 @@ export const DEFAULT_BACKGROUND: Background = {
 };
 
 export const DEFAULT_SETTINGS: Settings = {
-  columns: 4,
-  rows: 2,
+  accordionCount: 3,
+  itemsPerRow: 5,
   showTitles: true,
   theme: "system",
   background: DEFAULT_BACKGROUND,
   cardStyle: "minimal",
+  searchEngine: "google",
 };
-
-// Total slot capacity — indices 0..MAX_SLOTS-1 are always stored
-// Max grid is 8×8 = 64 slots
-export const MAX_SLOTS = 64;

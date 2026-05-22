@@ -1,0 +1,501 @@
+/* ══════════════════════════════════════════════════════════════════════
+   AccordionGroup — layout & base styles
+   Color overrides per data-bg are at the bottom of this file.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Accordion container ─────────────────────────────────────────────── */
+.accordion {
+  border-radius: 12px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-card-bg);
+  color: var(--color-text);
+  overflow: hidden;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+/* Group drag-over highlight */
+.groupDragOver {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 25%, transparent);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px 0 8px;
+  height: 44px;
+  user-select: none;
+}
+
+/* ── Drag handle ─────────────────────────────────────────────────────── */
+.dragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  cursor: grab;
+  color: inherit;
+  opacity: 0.3;
+  flex-shrink: 0;
+  transition: opacity 0.12s, background 0.12s;
+}
+
+.dragHandle:hover {
+  opacity: 0.7;
+  background: rgba(128, 128, 128, 0.15);
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+/* ── Collapse toggle ──────────────────────────────────────────────────── */
+.toggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity 0.12s, background 0.12s;
+}
+
+.toggleBtn:hover {
+  opacity: 1;
+  background: rgba(128, 128, 128, 0.15);
+}
+
+.iconExpanded {
+  transition: transform 0.2s ease;
+  transform: rotate(0deg);
+}
+
+.iconCollapsed {
+  transition: transform 0.2s ease;
+  transform: rotate(-90deg);
+}
+
+/* ── Group name ───────────────────────────────────────────────────────── */
+.name {
+  font-size: 13px;
+  font-weight: 600;
+  color: inherit;
+  cursor: default;
+  flex-shrink: 0;
+  min-width: 40px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  opacity: 0.85;
+  transition: color 0.12s, opacity 0.12s;
+}
+
+.name:hover {
+  opacity: 1;
+  color: var(--color-accent);
+}
+
+/* Inline rename input */
+.nameInput {
+  font-size: 13px;
+  font-weight: 600;
+  color: inherit;
+  background: rgba(128, 128, 128, 0.12);
+  border: 1.5px solid var(--color-accent);
+  border-radius: 6px;
+  padding: 3px 8px;
+  outline: none;
+  flex-shrink: 0;
+  width: 160px;
+  min-width: 80px;
+}
+
+/* ── Mini icons (collapsed state) ─────────────────────────────────────── */
+.miniIcons {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  overflow: hidden;
+  padding: 0 4px;
+}
+
+.miniIconLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.miniIconLink:hover {
+  background: rgba(128, 128, 128, 0.18);
+}
+
+.miniIconImg {
+  display: block;
+  object-fit: contain;
+  border-radius: 2px;
+}
+
+/* ── Delete button ─────────────────────────────────────────────────────── */
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.12s, color 0.12s;
+}
+
+.header:hover .deleteBtn {
+  opacity: 0.4;
+}
+
+.deleteBtn:hover {
+  opacity: 1 !important;
+  background: rgba(220, 38, 38, 0.12);
+  color: #ef4444;
+}
+
+/* ── Card grid (expanded content) ────────────────────────────────────── */
+.content {
+  display: grid;
+  gap: 10px;
+  padding: 10px 12px 14px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Dynamic color contrast per background type
+   Each data-bg mode overrides accordion bg, text, and UI element colors
+   so the accordion always reads clearly against whatever is behind it.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Default (data-bg="none"): follows theme variables — no overrides needed ── */
+
+/* ── Dark solid background color ─────────────────────────────────────── */
+:root[data-bg="dark"] .accordion {
+  background: rgba(10, 10, 15, 0.72);
+  border-color: rgba(255, 255, 255, 0.13);
+  color: #efefef;
+}
+
+:root[data-bg="dark"] .content {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-bg="dark"] .name:hover {
+  color: #a0b4ff;
+}
+
+:root[data-bg="dark"] .nameInput {
+  background: rgba(255, 255, 255, 0.08);
+  color: #efefef;
+}
+
+:root[data-bg="dark"] .groupDragOver {
+  border-color: #7b9bff;
+  box-shadow: 0 0 0 2px rgba(123, 155, 255, 0.2);
+}
+
+/* ── Image / gradient background ─────────────────────────────────────── */
+:root[data-bg="image"] .accordion {
+  background: rgba(0, 0, 0, 0.52);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+:root[data-bg="image"] .content {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-bg="image"] .name:hover {
+  color: #a0b4ff;
+}
+
+:root[data-bg="image"] .nameInput {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+:root[data-bg="image"] .groupDragOver {
+  border-color: #7b9bff;
+  box-shadow: 0 0 0 2px rgba(123, 155, 255, 0.25);
+}
+
+/* ── Light solid background color ────────────────────────────────────── */
+:root[data-bg="light"] .accordion {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #111111;
+}
+
+:root[data-bg="light"] .content {
+  border-top-color: rgba(0, 0, 0, 0.07);
+}
+
+:root[data-bg="light"] .name:hover {
+  color: #4f6ef7;
+}
+
+:root[data-bg="light"] .nameInput {
+  background: rgba(0, 0, 0, 0.05);
+  color: #111111;
+}
+
+:root[data-bg="light"] .groupDragOver {
+  border-color: #4f6ef7;
+  box-shadow: 0 0 0 2px rgba(79, 110, 247, 0.18);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Accordion card-style variants
+   These apply on top of .accordion and override as needed.
+   Compound selectors (.accordion.accordionGlass) have higher specificity
+   (0,4,0) than the data-bg base overrides (0,3,0), so they win correctly.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Minimal: same as base .accordion — no additional rules needed ──── */
+.accordionMinimal {}
+
+/* ── Glass: frosted blur effect ─────────────────────────────────────── */
+.accordionGlass {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-bg="dark"] .accordion.accordionGlass {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  color: #efefef;
+}
+
+:root[data-bg="image"] .accordion.accordionGlass {
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.28);
+  color: #ffffff;
+}
+
+:root[data-bg="light"] .accordion.accordionGlass {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  color: #111111;
+}
+
+/* content divider inside glass */
+.accordionGlass .content {
+  border-top-color: rgba(128, 128, 128, 0.15);
+}
+
+:root[data-bg="dark"] .accordion.accordionGlass .content,
+:root[data-bg="image"] .accordion.accordionGlass .content {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Bento: solid tiles with shadow ──────────────────────────────────── */
+.accordionBento {
+  border-radius: 20px;
+  border: none;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 6px 24px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-bg="dark"] .accordion.accordionBento {
+  background: rgba(28, 28, 36, 0.94);
+  color: #efefef;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-bg="image"] .accordion.accordionBento {
+  background: rgba(12, 12, 18, 0.70);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #ffffff;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.35),
+    0 6px 28px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-bg="light"] .accordion.accordionBento {
+  background: #ffffff;
+  color: #111111;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 6px 24px rgba(0, 0, 0, 0.04);
+}
+
+/* content divider inside bento (borderless container) */
+.accordionBento .content {
+  border-top-color: rgba(0, 0, 0, 0.07);
+}
+
+:root[data-bg="dark"] .accordion.accordionBento .content,
+:root[data-bg="image"] .accordion.accordionBento .content {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   NEW ACCORDION STYLE VARIANTS
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Neon: deep-dark container with accent border glow ───────────────── */
+.accordionNeon {
+  background: rgba(6, 6, 14, 0.92);
+  border: 1.5px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+  color: #ccd4ff;
+}
+
+:root[data-bg="dark"]  .accordion.accordionNeon,
+:root[data-bg="image"] .accordion.accordionNeon {
+  background: rgba(4, 4, 10, 0.95);
+  border-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
+  color: #d0d8ff;
+}
+
+:root[data-bg="light"] .accordion.accordionNeon {
+  background: rgba(8, 8, 20, 0.92);
+  border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
+  color: #ccd4ff;
+}
+
+.accordionNeon .content {
+  border-top-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+}
+
+.accordion.accordionNeon.groupDragOver {
+  border-color: var(--color-accent);
+  box-shadow:
+    0 0  8px color-mix(in srgb, var(--color-accent) 50%, transparent),
+    0 0 20px color-mix(in srgb, var(--color-accent) 24%, transparent);
+}
+
+/* ── Neumorphic: extruded-from-page container ────────────────────────── */
+.accordionNeumorphic {
+  border: none;
+  background: var(--color-bg);
+  border-radius: 18px;
+  box-shadow:
+     8px  8px 22px rgba(0,   0,   0,   0.12),
+    -6px -6px 18px rgba(255, 255, 255, 0.72);
+}
+
+:root[data-bg="dark"] .accordion.accordionNeumorphic {
+  background: var(--color-bg);
+  box-shadow:
+     8px  8px 22px rgba(0,  0,  0,  0.50),
+    -5px -5px 16px rgba(60, 60, 80, 0.60);
+}
+
+:root[data-bg="light"] .accordion.accordionNeumorphic {
+  background: #f0f0f0;
+  box-shadow:
+     8px  8px 22px rgba(0,   0,   0,   0.09),
+    -6px -6px 18px rgba(255, 255, 255, 1.00);
+}
+
+:root[data-bg="image"] .accordion.accordionNeumorphic {
+  background: rgba(14, 14, 20, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: none;
+  box-shadow:
+     7px  7px 20px rgba(0,   0,   0,   0.55),
+    -4px -4px 12px rgba(255, 255, 255, 0.05);
+}
+
+.accordionNeumorphic .content {
+  border-top-color: rgba(0, 0, 0, 0.06);
+}
+
+:root[data-bg="dark"]  .accordion.accordionNeumorphic .content,
+:root[data-bg="image"] .accordion.accordionNeumorphic .content {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Aurora: animated gradient container ─────────────────────────────── */
+@keyframes auroraShift {
+  0%   { background-position:   0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position:   0% 50%; }
+}
+
+.accordionAurora {
+  background: linear-gradient(
+    135deg,
+    rgba(78,  42, 196, 0.30),
+    rgba(12,  90, 200, 0.24),
+    rgba(0,  168, 200, 0.24),
+    rgba(0,  185, 140, 0.20),
+    rgba(78,  42, 196, 0.30)
+  );
+  background-size: 300% 300%;
+  animation: auroraShift 12s ease infinite;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1.5px solid rgba(148, 198, 255, 0.28);
+}
+
+:root[data-bg="light"] .accordion.accordionAurora {
+  background: linear-gradient(
+    135deg,
+    rgba(78,  42, 196, 0.12),
+    rgba(12,  90, 200, 0.10),
+    rgba(0,  168, 200, 0.10),
+    rgba(0,  185, 140, 0.08),
+    rgba(78,  42, 196, 0.12)
+  );
+  background-size: 300% 300%;
+  animation: auroraShift 12s ease infinite;
+  border-color: rgba(78, 42, 196, 0.18);
+}
+
+.accordionAurora .content {
+  border-top-color: rgba(148, 198, 255, 0.20);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accordionAurora {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}

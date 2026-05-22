@@ -249,3 +249,378 @@
 .emptyCard.styleIcons:hover {
   transform: translateY(-4px);
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   NEW CARD STYLE VARIANTS
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Neon / Synthwave ────────────────────────────────────────────────────
+ *
+ * Design intent:
+ *   Inspired by glowing neon signs in a cyberpunk city at night.
+ *   Cards are always near-black so the accent glow remains visible on any
+ *   background type — including light. A thin border emits layered neon
+ *   halos on hover (3 concentric glow rings, each more diffuse than the
+ *   last). The favicon gains a matching color drop-shadow halo.
+ *   Accent color adapts to dark/light theme via var(--color-accent).
+ *
+ * ──────────────────────────────────────────────────────────────────────── */
+
+.styleNeon {
+  background: rgba(6, 6, 14, 0.92);
+  border: 1.5px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+  border-radius: 10px;
+  color: #ccd4ff;
+  transition:
+    border-color 0.22s ease,
+    box-shadow   0.28s ease,
+    transform    0.18s ease,
+    background   0.22s ease;
+}
+
+.styleNeon .favicon {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--color-accent) 45%, transparent));
+  transition: filter 0.25s ease;
+}
+
+/* Hover: neon glow radiates through 3 concentric rings */
+:root[data-bg="none"]  .card.styleNeon:hover,
+:root[data-bg="dark"]  .card.styleNeon:hover,
+:root[data-bg="image"] .card.styleNeon:hover,
+:root[data-bg="light"] .card.styleNeon:hover {
+  background: rgba(8, 8, 22, 0.98);
+  border-color: var(--color-accent);
+  box-shadow:
+    0 0  8px color-mix(in srgb, var(--color-accent) 60%, transparent),
+    0 0 20px color-mix(in srgb, var(--color-accent) 32%, transparent),
+    0 0 45px color-mix(in srgb, var(--color-accent) 14%, transparent);
+  transform: translateY(-3px);
+  color: #ffffff;
+}
+
+:root[data-bg="none"]  .card.styleNeon:hover .favicon,
+:root[data-bg="dark"]  .card.styleNeon:hover .favicon,
+:root[data-bg="image"] .card.styleNeon:hover .favicon,
+:root[data-bg="light"] .card.styleNeon:hover .favicon {
+  filter:
+    drop-shadow(0 0 10px color-mix(in srgb, var(--color-accent) 72%, transparent))
+    drop-shadow(0 0 22px color-mix(in srgb, var(--color-accent) 38%, transparent));
+}
+
+.emptyCard.styleNeon {
+  background: rgba(6, 6, 14, 0.85);
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+:root[data-bg="none"]  .emptyCard.styleNeon:hover,
+:root[data-bg="dark"]  .emptyCard.styleNeon:hover,
+:root[data-bg="image"] .emptyCard.styleNeon:hover,
+:root[data-bg="light"] .emptyCard.styleNeon:hover {
+  background: rgba(8, 8, 22, 0.95);
+  border-color: var(--color-accent);
+  box-shadow:
+    0 0  8px color-mix(in srgb, var(--color-accent) 50%, transparent),
+    0 0 24px color-mix(in srgb, var(--color-accent) 22%, transparent);
+  transform: translateY(-3px);
+}
+
+
+/* ── Neumorphism / Soft UI ───────────────────────────────────────────────
+ *
+ * Design intent:
+ *   Pure shadow physics — no borders, no color, no glass.
+ *   Each card appears extruded from the page surface using two opposing
+ *   box-shadows: a bright highlight from the top-left (simulating a light
+ *   source at 10 o'clock) and a deeper shadow from the bottom-right.
+ *   Hover inverts the shadows to a pressed/inset state — the satisfying
+ *   tactile feedback of a physical button click.
+ *   Per data-bg: shadow brightness is tuned so the effect reads correctly
+ *   whether the container is white, dark grey, or a blurred image.
+ *
+ * ──────────────────────────────────────────────────────────────────────── */
+
+.styleNeumorphic {
+  background: var(--color-card-bg);
+  border: none;
+  border-radius: 18px;
+  box-shadow:
+     7px  7px 18px rgba(0,   0,   0,   0.13),
+    -5px -5px 14px rgba(255, 255, 255, 0.78);
+  transition: box-shadow 0.25s ease;
+}
+
+.emptyCard.styleNeumorphic {
+  background: var(--color-card-bg);
+  border: none;
+  border-radius: 18px;
+  box-shadow:
+     7px  7px 18px rgba(0,   0,   0,   0.13),
+    -5px -5px 14px rgba(255, 255, 255, 0.78);
+}
+
+/* Hover = pressed (inset shadows) */
+:root[data-bg="none"] .card.styleNeumorphic:hover,
+:root[data-bg="none"] .emptyCard.styleNeumorphic:hover {
+  background: var(--color-card-bg);
+  box-shadow:
+    inset  4px  4px 12px rgba(0,   0,   0,   0.12),
+    inset -3px -3px 10px rgba(255, 255, 255, 0.75);
+  transform: none;
+}
+
+:root[data-bg="dark"] .card.styleNeumorphic,
+:root[data-bg="dark"] .emptyCard.styleNeumorphic {
+  background: var(--color-card-bg);
+  box-shadow:
+     7px  7px 18px rgba(0,  0,  0,  0.50),
+    -4px -4px 12px rgba(65, 65, 80, 0.65);
+}
+
+:root[data-bg="dark"] .card.styleNeumorphic:hover,
+:root[data-bg="dark"] .emptyCard.styleNeumorphic:hover {
+  background: var(--color-card-bg);
+  box-shadow:
+    inset  4px  4px 12px rgba(0,  0,  0,  0.55),
+    inset -3px -3px 10px rgba(55, 55, 70, 0.60);
+  transform: none;
+}
+
+:root[data-bg="light"] .card.styleNeumorphic,
+:root[data-bg="light"] .emptyCard.styleNeumorphic {
+  background: #efefef;
+  box-shadow:
+     7px  7px 18px rgba(0,   0,   0,   0.10),
+    -5px -5px 14px rgba(255, 255, 255, 1.00);
+}
+
+:root[data-bg="light"] .card.styleNeumorphic:hover,
+:root[data-bg="light"] .emptyCard.styleNeumorphic:hover {
+  background: #efefef;
+  box-shadow:
+    inset  4px  4px 12px rgba(0,   0,   0,   0.10),
+    inset -3px -3px 10px rgba(255, 255, 255, 1.00);
+  transform: none;
+}
+
+:root[data-bg="image"] .card.styleNeumorphic,
+:root[data-bg="image"] .emptyCard.styleNeumorphic {
+  background: rgba(18, 18, 26, 0.68);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: none;
+  box-shadow:
+     6px  6px 18px rgba(0,   0,   0,   0.55),
+    -3px -3px 10px rgba(255, 255, 255, 0.06);
+}
+
+:root[data-bg="image"] .card.styleNeumorphic:hover,
+:root[data-bg="image"] .emptyCard.styleNeumorphic:hover {
+  background: rgba(18, 18, 26, 0.80);
+  box-shadow:
+    inset  4px  4px 12px rgba(0,   0,   0,   0.65),
+    inset -3px -3px  8px rgba(255, 255, 255, 0.04);
+  transform: none;
+}
+
+
+/* ── Stamp / Polaroid ────────────────────────────────────────────────────
+ *
+ * Design intent:
+ *   Inspired by Polaroid photographs and analog postage stamps.
+ *   Cards are always paper-white — a deliberate physical object against
+ *   any digital background, like a printed photo placed on a surface.
+ *   Extra bottom padding creates the Polaroid caption margin below the
+ *   "photograph". Hover lifts the card and introduces a slight tilt —
+ *   the muscle-memory of picking up a printed memory from a desk.
+ *   transform-origin sits at the card's lower-center for a natural pivot.
+ *
+ * ──────────────────────────────────────────────────────────────────────── */
+
+.styleStamp {
+  background: #fefefe;
+  border: none;
+  border-radius: 2px;
+  padding: 8% 8% 22%; /* extra bottom = Polaroid white margin */
+  box-shadow:
+    0  1px  2px rgba(0, 0, 0, 0.10),
+    0  4px 14px rgba(0, 0, 0, 0.12),
+    0  0   0  1px rgba(0, 0, 0, 0.04);
+  color: #222222;
+  transform-origin: center 80%;
+  transition:
+    transform  0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.22s ease;
+}
+
+/* Keep the paper-white on every bg type — the contrast is intentional */
+:root[data-bg="dark"]  .card.styleStamp,
+:root[data-bg="dark"]  .emptyCard.styleStamp,
+:root[data-bg="image"] .card.styleStamp,
+:root[data-bg="image"] .emptyCard.styleStamp,
+:root[data-bg="light"] .card.styleStamp,
+:root[data-bg="light"] .emptyCard.styleStamp {
+  background: #fefefe;
+  color: #222222;
+}
+
+.styleStamp .title {
+  opacity: 0.55;
+}
+
+.styleStamp .favicon {
+  width: 52%;
+  height: 52%;
+}
+
+/* Hover: photo lifts and tilts as if picked up */
+:root[data-bg="none"]  .card.styleStamp:hover,
+:root[data-bg="dark"]  .card.styleStamp:hover,
+:root[data-bg="image"] .card.styleStamp:hover,
+:root[data-bg="light"] .card.styleStamp:hover {
+  background: #ffffff;
+  color: #111111;
+  box-shadow:
+    0  8px 16px rgba(0, 0, 0, 0.14),
+    0 24px 48px rgba(0, 0, 0, 0.22),
+    0  0   0  1px rgba(0, 0, 0, 0.04);
+  transform: translateY(-10px) rotate(-2deg);
+}
+
+.emptyCard.styleStamp {
+  background: #fafafa;
+  border: 1.5px dashed rgba(0, 0, 0, 0.20);
+  border-radius: 2px;
+  box-shadow:
+    0 1px  3px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-bg="none"]  .emptyCard.styleStamp:hover,
+:root[data-bg="dark"]  .emptyCard.styleStamp:hover,
+:root[data-bg="image"] .emptyCard.styleStamp:hover,
+:root[data-bg="light"] .emptyCard.styleStamp:hover {
+  background: #ffffff;
+  box-shadow:
+    0  6px 14px rgba(0, 0, 0, 0.12),
+    0 20px 40px rgba(0, 0, 0, 0.18);
+  transform: translateY(-8px);
+}
+
+
+/* ── Aurora ──────────────────────────────────────────────────────────────
+ *
+ * Design intent:
+ *   Inspired by the aurora borealis — living curtains of polar light.
+ *   A slow-cycling gradient (purple → indigo → cyan → emerald) gives each
+ *   card a unique color moment in the 9-second cycle, making the whole
+ *   grid feel organically alive rather than uniform.
+ *   Combined with a frosted glass backdrop, it layers atmospheric depth.
+ *   Hover pauses the animation and adds an ambient outer glow as if the
+ *   card stepped forward from the aurora curtain.
+ *   prefers-reduced-motion: animation freezes mid-cycle — gradient remains
+ *   beautiful as a static composition.
+ *
+ * ──────────────────────────────────────────────────────────────────────── */
+
+@keyframes auroraShift {
+  0%   { background-position:   0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position:   0% 50%; }
+}
+
+.styleAurora {
+  background: linear-gradient(
+    135deg,
+    rgba(78,  42, 196, 0.38),
+    rgba(12,  90, 200, 0.30),
+    rgba(0,  168, 200, 0.30),
+    rgba(0,  185, 140, 0.24),
+    rgba(78,  42, 196, 0.38)
+  );
+  background-size: 300% 300%;
+  animation: auroraShift 9s ease infinite;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(148, 198, 255, 0.30);
+  border-radius: 14px;
+  box-shadow:
+    0 4px 20px rgba(78, 42, 196, 0.16),
+    0 1px  4px rgba(0,  0,  0,   0.10);
+}
+
+:root[data-bg="light"] .styleAurora {
+  background: linear-gradient(
+    135deg,
+    rgba(78,  42, 196, 0.16),
+    rgba(12,  90, 200, 0.12),
+    rgba(0,  168, 200, 0.12),
+    rgba(0,  185, 140, 0.10),
+    rgba(78,  42, 196, 0.16)
+  );
+  background-size: 300% 300%;
+  animation: auroraShift 9s ease infinite;
+  border-color: rgba(78, 42, 196, 0.20);
+  box-shadow:
+    0 4px 20px rgba(78, 42, 196, 0.08),
+    0 1px  4px rgba(0,  0,  0,   0.06);
+}
+
+/* Hover: pause the wave + add ambient glow corona */
+:root[data-bg="none"]  .card.styleAurora:hover,
+:root[data-bg="dark"]  .card.styleAurora:hover,
+:root[data-bg="image"] .card.styleAurora:hover {
+  animation-play-state: paused;
+  border-color: rgba(148, 198, 255, 0.55);
+  box-shadow:
+    0  0 18px rgba(78,  42, 196, 0.40),
+    0  0 36px rgba(0,  168, 200, 0.20),
+    0  8px 28px rgba(0,   0,   0, 0.22);
+  transform: translateY(-4px);
+}
+
+:root[data-bg="light"] .card.styleAurora:hover {
+  animation-play-state: paused;
+  border-color: rgba(78, 42, 196, 0.45);
+  box-shadow:
+    0  0 18px rgba(78,  42, 196, 0.20),
+    0  8px 28px rgba(0,   0,   0, 0.10);
+  transform: translateY(-4px);
+}
+
+.emptyCard.styleAurora {
+  background: linear-gradient(
+    135deg,
+    rgba(78,  42, 196, 0.20),
+    rgba(12,  90, 200, 0.16),
+    rgba(0,  168, 200, 0.16),
+    rgba(0,  185, 140, 0.12),
+    rgba(78,  42, 196, 0.20)
+  );
+  background-size: 300% 300%;
+  animation: auroraShift 9s ease infinite;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px dashed rgba(148, 198, 255, 0.42);
+  border-radius: 14px;
+}
+
+:root[data-bg="none"]  .emptyCard.styleAurora:hover,
+:root[data-bg="dark"]  .emptyCard.styleAurora:hover,
+:root[data-bg="image"] .emptyCard.styleAurora:hover,
+:root[data-bg="light"] .emptyCard.styleAurora:hover {
+  animation-play-state: paused;
+  border-color: rgba(148, 198, 255, 0.75);
+  box-shadow:
+    0  0 16px rgba(78,  42, 196, 0.32),
+    0  0 32px rgba(0,  168, 200, 0.16);
+  transform: translateY(-4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .styleAurora,
+  .emptyCard.styleAurora {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}

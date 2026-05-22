@@ -54,20 +54,22 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  height: 100vh;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-height: 100vh;
+  overflow-y: auto;
 }
 
-.grid {
-  display: grid;
-  gap: 12px;
-  padding: 40px;
-  align-content: center;
-  justify-content: center;
+/* ── Page layout ── */
+.page {
+  padding: 24px 10% 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
+
+.searchBarRow {
+  margin-top: 150px;
+}
+
 
 .settingsBtn {
   position: fixed;
@@ -85,6 +87,7 @@ body {
   justify-content: center;
   opacity: 0.25;
   transition: opacity 0.15s, background 0.15s;
+  z-index: 10;
 }
 
 .settingsBtn:hover {

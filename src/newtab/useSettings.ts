@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DEFAULT_SETTINGS } from "../types";
 import type { Settings } from "../types";
 
@@ -32,11 +32,12 @@ export function useSettings(): UseSettingsResult {
     return () => chrome.storage.sync.onChanged.removeListener(onChanged);
   }, []);
 
-  async function updateSettings(patch: Partial<Settings>) {
-    const next = { ...settings, ...patch };
-    setSettings(next);
+  // useCallback([], []) is correct: functional setSettings needs no snapshot of
+  // `settings`, so updateSettings has no dependency on component state at all.
+  const updateSettings = useCallback(async (patch: Partial<Settings>) => {
+    setSettings((prev) => ({ ...prev, ...patch }));
     await chrome.storage.sync.set(patch);
-  }
+  }, []);
 
   return { settings, updateSettings };
 }
