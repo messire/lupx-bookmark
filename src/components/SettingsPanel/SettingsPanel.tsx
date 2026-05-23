@@ -7,8 +7,10 @@ import styles from "./SettingsPanel.module.css";
 interface SettingsPanelProps {
   open: boolean;
   settings: Settings;
-  onUpdate: (patch: Partial<Settings>) => Promise<void>;
+  onUpdate: (patch: Partial<Settings>) => void;
   onClose: () => void;
+  groupCount: number;
+  onAddGroup: () => void;
 }
 
 const BG_TYPES: { value: BackgroundType; label: string }[] = [
@@ -29,14 +31,18 @@ const CARD_STYLES: { value: CardStyle; label: string; description: string }[] = 
   { value: "aurora", label: "Aurora", description: "Living gradient" },
 ];
 
-export default function SettingsPanel({ open, settings, onUpdate, onClose }: SettingsPanelProps) {
+export default function SettingsPanel({
+  open,
+  settings,
+  onUpdate,
+  onClose,
+  groupCount,
+  onAddGroup,
+}: SettingsPanelProps) {
   const [oldSettings, setOldSettings] = useState<Settings | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const wallpapers = useWallpapers();
 
-  // Snapshot settings the moment the panel opens so Rollback has a reference.
-  // Intentionally excludes `settings` from deps: we only want to capture the
-  // value at the instant `open` flips to true, not re-snapshot on every change.
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
   useEffect(() => {
@@ -46,9 +52,9 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
   const hasChanges =
     oldSettings !== null && JSON.stringify(oldSettings) !== JSON.stringify(settings);
 
-  async function handleUpdate(patch: Partial<Settings>) {
+  function handleUpdate(patch: Partial<Settings>) {
     if (oldSettings === null) setOldSettings({ ...settings });
-    await onUpdate(patch);
+    onUpdate(patch);
   }
 
   function updateBackground(patch: Partial<Settings["background"]>) {
@@ -60,17 +66,18 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
     onClose();
   }, [onClose]);
 
-  async function handleRollback() {
+  function handleRollback() {
     if (!oldSettings) return;
-    await onUpdate(oldSettings);
+    onUpdate(oldSettings);
     setOldSettings(null);
   }
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    await saveBackgroundImage(file);
-    updateBackground({ type: "image", imageUrl: "" });
+    saveBackgroundImage(file).then(() => {
+      updateBackground({ type: "image", imageUrl: "" });
+    });
   }
 
   useEffect(() => {
@@ -95,7 +102,7 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
         <header className={styles.header}>
           <div className={styles.headerActions}>
             <button className={styles.closeBtn} onClick={handleClose} title="Close">
-              ✕
+              &#10005;
             </button>
             {hasChanges && (
               <button className={styles.rollbackBtn} onClick={handleRollback}>
@@ -107,31 +114,15 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
         </header>
 
         <div className={styles.body}>
-          {/* ── Layout ── */}
+          {/* Layout */}
           <section className={styles.section}>
             <h3 className={styles.sectionTitle}>Layout</h3>
 
             <div className={styles.field}>
-              <span className={styles.label}>Groups</span>
-              <div className={styles.stepper}>
-                <button
-                  className={styles.stepBtn}
-                  onClick={() =>
-                    handleUpdate({ accordionCount: Math.max(1, settings.accordionCount - 1) })
-                  }
-                >
-                  −
-                </button>
-                <span className={styles.stepValue}>{settings.accordionCount}</span>
-                <button
-                  className={styles.stepBtn}
-                  onClick={() =>
-                    handleUpdate({ accordionCount: Math.min(10, settings.accordionCount + 1) })
-                  }
-                >
-                  +
-                </button>
-              </div>
+              <span className={styles.label}>Groups &mdash; {groupCount}</span>
+              <button className={styles.stepBtn} onClick={onAddGroup} title="Add group">
+                +
+              </button>
             </div>
 
             <div className={styles.field}>
@@ -143,7 +134,7 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
                     handleUpdate({ itemsPerRow: Math.max(2, settings.itemsPerRow - 1) })
                   }
                 >
-                  −
+                  &minus;
                 </button>
                 <span className={styles.stepValue}>{settings.itemsPerRow}</span>
                 <button
@@ -160,7 +151,7 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
             <div className={styles.hint}>Max 16 items per group</div>
           </section>
 
-          {/* ── Appearance ── */}
+          {/* Appearance */}
           <section className={styles.section}>
             <h3 className={styles.sectionTitle}>Appearance</h3>
 
@@ -206,11 +197,10 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
             </div>
           </section>
 
-          {/* ── Background ── */}
+          {/* Background */}
           <section className={styles.section}>
             <h3 className={styles.sectionTitle}>Background</h3>
 
-            {/* Type selector */}
             <div className={styles.segmented}>
               {BG_TYPES.map(({ value, label }) => (
                 <button
@@ -223,7 +213,6 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
               ))}
             </div>
 
-            {/* Color */}
             {bg.type === "color" && (
               <div className={styles.field}>
                 <span className={styles.label}>Color</span>
@@ -236,7 +225,6 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
               </div>
             )}
 
-            {/* Gradient */}
             {bg.type === "gradient" && (
               <>
                 <div className={styles.field}>
@@ -262,7 +250,7 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
                   />
                 </div>
                 <div className={styles.field}>
-                  <span className={styles.label}>Angle — {bg.gradient.angle}°</span>
+                  <span className={styles.label}>Angle &mdash; {bg.gradient.angle}&deg;</span>
                   <input
                     type="range"
                     min={0}
@@ -279,10 +267,8 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
               </>
             )}
 
-            {/* Image */}
             {bg.type === "image" && (
               <>
-                {/* Wallpaper gallery */}
                 {wallpapers.length > 0 && (
                   <div>
                     <span className={styles.subLabel}>Wallpapers</span>
@@ -301,7 +287,6 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
                   </div>
                 )}
 
-                {/* URL input */}
                 <div className={styles.field}>
                   <span className={styles.label}>URL</span>
                   <input
@@ -313,7 +298,6 @@ export default function SettingsPanel({ open, settings, onUpdate, onClose }: Set
                   />
                 </div>
 
-                {/* File upload */}
                 <div className={styles.field}>
                   <span className={styles.label}>File</span>
                   <button

@@ -19,23 +19,6 @@ function makeSlot(url: string, title: string): SpeedDialSlot {
   return { id: uid(), url, title };
 }
 
-/**
- * Adjusts the group list to exactly `count` entries:
- * - Adds empty groups if too few.
- * - Removes from the end (with all their items) if too many.
- * Returns the same array reference if no change is needed.
- */
-function applyCount(groups: AccordionGroup[], count: number): AccordionGroup[] {
-  if (groups.length === count) return groups;
-  if (groups.length < count) {
-    const next = [...groups];
-    while (next.length < count) next.push(makeGroup("New"));
-    return next;
-  }
-  // Decrease: slice removes trailing groups including their items
-  return groups.slice(0, count);
-}
-
 // ── Storage I/O ───────────────────────────────────────────────────────────
 
 async function loadFromStorage(): Promise<AccordionGroup[] | null> {
@@ -68,12 +51,14 @@ async function saveToStorage(groups: AccordionGroup[]): Promise<void> {
 
 export interface UseAccordionsResult {
   groups: AccordionGroup[];
+  /** Add a new empty group at the end of the list. */
+  addGroup: () => Promise<void>;
   /** Add a bookmark to a group. */
   addItem: (groupId: string, url: string, title: string) => Promise<void>;
   /**
    * Move a bookmark.
-   * Same group → swap positions.
-   * Different groups → remove from source, insert at toIdx in target.
+   * Same group: swap positions.
+   * Different groups: remove from source, insert at toIdx in target.
    */
   moveItem: (
     fromGroupId: string,
@@ -81,6 +66,8 @@ export interface UseAccordionsResult {
     toGroupId: string,
     toIdx: number,
   ) => Promise<void>;
+  /** Remove a single bookmark from a group by index. */
+  removeItem: (groupId: string, itemIdx: number) => Promise<void>;
   /** Rename a group (persists immediately). */
   renameGroup: (groupId: string, name: string) => Promise<void>;
   /** Toggle the collapsed state of a group. */
@@ -93,24 +80,15 @@ export interface UseAccordionsResult {
 
 /**
  * Manages accordion groups stored in chrome.storage.local.
- * @param accordionCount The desired number of groups (from Settings).
- *   When this value changes the hook automatically adds/removes groups
- *   to match, permanently deleting trailing groups when count decreases.
+ *
+ * Group count is owned entirely by this hook. Adding/removing groups happens
+ * through explicit user actions only — no automatic truncation.
  */
-export function useAccordions(accordionCount: number): UseAccordionsResult {
+export function useAccordions(): UseAccordionsResult {
   const [groups, setGroups] = useState<AccordionGroup[]>([]);
-
-  // Refs so effects can read the latest values without stale closures.
   const groupsRef = useRef<AccordionGroup[]>([]);
-  const isLoadedRef = useRef(false);
-  // Always reflects the latest accordionCount so the initial-load effect can
-  // read it without listing it as a dep (we only want that effect to run once).
-  const accordionCountRef = useRef(accordionCount);
-  accordionCountRef.current = accordionCount;
 
   // ── Persist helper ────────────────────────────────────────────────────
-  // useCallback([], []) is correct: only touches groupsRef (stable ref) and
-  // setGroups (stable setter) — no component state in the dep chain.
   const persist = useCallback(async (next: AccordionGroup[]) => {
     const prev = groupsRef.current;
     groupsRef.current = next;
@@ -118,7 +96,6 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
     try {
       await saveToStorage(next);
     } catch {
-      // Roll back UI to the last successfully persisted state
       groupsRef.current = prev;
       setGroups(prev);
     }
@@ -132,9 +109,7 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
       let loaded = await loadFromStorage();
 
       if (!loaded) {
-        // Try migrating from legacy flat-grid format
         const legacy = await loadLegacy();
-
         if (legacy?.some((s) => s.url)) {
           const first = makeGroup("Bookmarks");
           first.items = legacy.flatMap((s) => {
@@ -143,32 +118,18 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
           });
           loaded = [first];
         } else {
-          // Fresh install — default starter groups
           loaded = [makeGroup("Work"), makeGroup("Personal"), makeGroup("Tools")];
         }
       }
 
       if (cancelled) return;
-
-      // Sync with current accordionCount on first load
-      const synced = applyCount(loaded, accordionCountRef.current);
-      isLoadedRef.current = true;
-      await persist(synced);
+      await persist(loaded);
     })();
 
     return () => {
       cancelled = true;
     };
   }, [persist]);
-
-  // ── Sync count when accordionCount changes ────────────────────────────
-  useEffect(() => {
-    if (!isLoadedRef.current) return; // wait until initial load completes
-    const synced = applyCount(groupsRef.current, accordionCount);
-    if (synced !== groupsRef.current) {
-      persist(synced);
-    }
-  }, [accordionCount, persist]);
 
   // ── Listen for changes from other tabs ────────────────────────────────
   useEffect(() => {
@@ -184,8 +145,11 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
   }, []);
 
   // ── Operations ────────────────────────────────────────────────────────
-  // All operations read only groupsRef.current (stable ref) and call persist
-  // (stable callback), so they can all have [] deps and be stable themselves.
+
+  const addGroup = useCallback(async () => {
+    const next = [...groupsRef.current, makeGroup("New")];
+    await persist(next);
+  }, [persist]);
 
   const addItem = useCallback(
     async (groupId: string, url: string, title: string) => {
@@ -207,16 +171,27 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
       if (!fromGroup || !toGroup) return;
 
       if (fromGroupId === toGroupId) {
-        // Within group: swap
         const items = fromGroup.items;
-        if (toIdx >= items.length) return; // dropping on add-card within same group: no-op
+        if (toIdx >= items.length) return;
         [items[fromIdx], items[toIdx]] = [items[toIdx], items[fromIdx]];
       } else {
-        // Cross-group: extract then insert
         const [item] = fromGroup.items.splice(fromIdx, 1);
         toGroup.items.splice(Math.min(toIdx, toGroup.items.length), 0, item);
       }
 
+      await persist(next);
+    },
+    [persist],
+  );
+
+  const removeItem = useCallback(
+    async (groupId: string, itemIdx: number) => {
+      const next = groupsRef.current.map((g) => {
+        if (g.id !== groupId) return g;
+        const items = [...g.items];
+        items.splice(itemIdx, 1);
+        return { ...g, items };
+      });
       await persist(next);
     },
     [persist],
@@ -260,5 +235,15 @@ export function useAccordions(accordionCount: number): UseAccordionsResult {
     [persist],
   );
 
-  return { groups, addItem, moveItem, renameGroup, toggleCollapse, swapGroups, deleteGroup };
+  return {
+    groups,
+    addGroup,
+    addItem,
+    moveItem,
+    removeItem,
+    renameGroup,
+    toggleCollapse,
+    swapGroups,
+    deleteGroup,
+  };
 }

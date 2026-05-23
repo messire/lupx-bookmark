@@ -13,10 +13,10 @@ import styles from "./newtab.module.css";
 
 // ── Card size ─────────────────────────────────────────────────────────────
 
-const PAGE_PADDING_PCT = 0.1; // must match .page { padding: 24px 10% }
-const ACCORDION_BORDER = 3; // accordion border (1.5 * 2)
-const CONTENT_PAD_X = 24; // accordion .content left+right padding (12*2)
-const CARD_GAP = 10; // gap between cards
+const PAGE_PADDING_PCT = 0.1;
+const ACCORDION_BORDER = 3;
+const CONTENT_PAD_X = 24;
+const CARD_GAP = 10;
 
 function calcCardWidth(itemsPerRow: number): number {
   const pagePadding = window.innerWidth * PAGE_PADDING_PCT;
@@ -53,25 +53,26 @@ interface ItemDrag {
 
 function App() {
   const { settings, updateSettings } = useSettings();
-  const { groups, moveItem, swapGroups, deleteGroup, addItem, renameGroup, toggleCollapse } =
-    useAccordions(settings.accordionCount);
+  const {
+    groups,
+    addGroup,
+    moveItem,
+    swapGroups,
+    deleteGroup,
+    addItem,
+    removeItem,
+    renameGroup,
+    toggleCollapse,
+  } = useAccordions();
   const cardWidth = useCardWidth(settings.itemsPerRow);
 
-  // Settings panel
   const [settingsOpen, setSettingsOpen] = useState(false);
-
-  // AddSlotModal — tracks which group the add was triggered for
   const [addingToGroup, setAddingToGroup] = useState<string | null>(null);
-
-  // Item drag state
   const [itemDragFrom, setItemDragFrom] = useState<ItemDrag | null>(null);
   const [itemDragOver, setItemDragOver] = useState<ItemDrag | null>(null);
-
-  // Group drag state
   const [groupDragFrom, setGroupDragFrom] = useState<number | null>(null);
   const [groupDragOver, setGroupDragOver] = useState<number | null>(null);
 
-  // Apply theme
   useEffect(() => {
     const root = document.documentElement;
     if (settings.theme === "dark") root.setAttribute("data-theme", "dark");
@@ -141,13 +142,26 @@ function App() {
     [addingToGroup, addItem],
   );
 
-  // Deleting via the × button also decrements the settings counter
   const handleDeleteGroup = useCallback(
     async (groupId: string) => {
       await deleteGroup(groupId);
-      await updateSettings({ accordionCount: Math.max(1, settings.accordionCount - 1) });
     },
-    [deleteGroup, updateSettings, settings.accordionCount],
+    [deleteGroup],
+  );
+
+  // ── Add group ────────────────────────────────────────────────────────────
+
+  const handleAddGroup = useCallback(async () => {
+    await addGroup();
+  }, [addGroup]);
+
+  // ── Remove item ──────────────────────────────────────────────────────────
+
+  const handleRemoveItem = useCallback(
+    async (groupId: string, itemIdx: number) => {
+      await removeItem(groupId, itemIdx);
+    },
+    [removeItem],
   );
 
   // ── Search engine ────────────────────────────────────────────────────────
@@ -189,11 +203,11 @@ function App() {
           onRename={renameGroup}
           onToggleCollapse={toggleCollapse}
           onDelete={handleDeleteGroup}
+          onRemoveItem={handleRemoveItem}
           settingsOpen={settingsOpen}
         />
       ))}
 
-      {/* Settings button */}
       <button className={styles.settingsBtn} onClick={() => setSettingsOpen(true)} title="Settings">
         <svg
           width="18"
@@ -215,6 +229,8 @@ function App() {
         settings={settings}
         onUpdate={updateSettings}
         onClose={() => setSettingsOpen(false)}
+        groupCount={groups.length}
+        onAddGroup={handleAddGroup}
       />
 
       {addingToGroup !== null && (
