@@ -61,6 +61,7 @@ function App() {
     deleteGroup,
     addItem,
     removeItem,
+    renameItem,
     renameGroup,
     toggleCollapse,
   } = useAccordions();
@@ -164,6 +165,15 @@ function App() {
     [removeItem],
   );
 
+  // ── Rename item ──────────────────────────────────────────────────────────
+
+  const handleRenameItem = useCallback(
+    async (groupId: string, itemIdx: number, title: string) => {
+      await renameItem(groupId, itemIdx, title);
+    },
+    [renameItem],
+  );
+
   // ── Search engine ────────────────────────────────────────────────────────
 
   const handleEngineChange = useCallback(
@@ -204,6 +214,7 @@ function App() {
           onToggleCollapse={toggleCollapse}
           onDelete={handleDeleteGroup}
           onRemoveItem={handleRemoveItem}
+          onRenameItem={handleRenameItem}
           settingsOpen={settingsOpen}
         />
       ))}

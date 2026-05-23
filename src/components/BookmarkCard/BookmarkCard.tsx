@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { getFaviconUrl } from "../../utils/favicon";
 import type { SpeedDialSlot, CardStyle } from "../../types";
 import styles from "./BookmarkCard.module.css";
@@ -26,6 +26,7 @@ interface BookmarkCardProps {
   onDrop: () => void;
   isDragOver: boolean;
   onRemove?: () => void;
+  onRename?: (title: string) => void;
 }
 
 export default function BookmarkCard({
@@ -38,9 +39,13 @@ export default function BookmarkCard({
   onDrop,
   isDragOver,
   onRemove,
+  onRename,
 }: BookmarkCardProps) {
   const [imgError, setImgError] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const styleClass = STYLE_CLASS[cardStyle];
   const dragClass = isDragOver ? ` ${styles.dragOver}` : "";
@@ -66,10 +71,12 @@ export default function BookmarkCard({
   const iconSrc = !faviconUrl || imgError ? PIN_ICON : faviconUrl;
 
   function handleClick(e: React.MouseEvent) {
-    if (confirmDelete) return;
+    if (confirmDelete || editing) return;
     e.preventDefault();
     window.location.href = url;
   }
+
+  // ── Delete ────────────────────────────────────────────────────────────────
 
   function handleDeleteClick(e: React.MouseEvent) {
     e.preventDefault();
@@ -89,13 +96,44 @@ export default function BookmarkCard({
     setConfirmDelete(false);
   }
 
+  // ── Rename ────────────────────────────────────────────────────────────────
+
+  function handleEditClick(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraft(slot.title ?? slot.url ?? "");
+    setEditing(true);
+  }
+
+  function commitEdit() {
+    setEditing(false);
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== (slot.title ?? slot.url)) {
+      onRename?.(trimmed);
+    }
+  }
+
+  function handleEditKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commitEdit();
+    }
+    if (e.key === "Escape") {
+      setEditing(false);
+    }
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  const isInteracting = confirmDelete || editing;
+
   return (
     <a
       href={slot.url}
-      className={`${styles.card} ${styleClass}${dragClass}${confirmDelete ? ` ${styles.confirming}` : ""}`}
-      title={confirmDelete ? undefined : (slot.title ?? slot.url)}
+      className={`${styles.card} ${styleClass}${dragClass}${confirmDelete ? ` ${styles.confirming}` : ""}${editing ? ` ${styles.editing}` : ""}`}
+      title={isInteracting ? undefined : (slot.title ?? slot.url)}
       onClick={handleClick}
-      draggable={!confirmDelete}
+      draggable={!isInteracting}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDrop={onDrop}
@@ -120,8 +158,43 @@ export default function BookmarkCard({
             </button>
           </div>
         </div>
+      ) : editing ? (
+        <div className={styles.editOverlay}>
+          <input
+            ref={inputRef}
+            className={styles.editInput}
+            value={draft}
+            autoFocus
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={handleEditKeyDown}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       ) : (
         <>
+          {onRename && (
+            <button
+              className={styles.editBtn}
+              onClick={handleEditClick}
+              title="Rename bookmark"
+              aria-label="Rename bookmark"
+            >
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
+          )}
           {onRemove && (
             <button
               className={styles.deleteBtn}

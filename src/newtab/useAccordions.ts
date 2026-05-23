@@ -68,6 +68,8 @@ export interface UseAccordionsResult {
   ) => Promise<void>;
   /** Remove a single bookmark from a group by index. */
   removeItem: (groupId: string, itemIdx: number) => Promise<void>;
+  /** Rename a bookmark (update its title) by index. */
+  renameItem: (groupId: string, itemIdx: number, title: string) => Promise<void>;
   /** Rename a group (persists immediately). */
   renameGroup: (groupId: string, name: string) => Promise<void>;
   /** Toggle the collapsed state of a group. */
@@ -197,6 +199,20 @@ export function useAccordions(): UseAccordionsResult {
     [persist],
   );
 
+  const renameItem = useCallback(
+    async (groupId: string, itemIdx: number, title: string) => {
+      const next = groupsRef.current.map((g) => {
+        if (g.id !== groupId) return g;
+        const items = g.items.map((item, idx) =>
+          idx === itemIdx ? { ...item, title: title.trim() || item.url } : item,
+        );
+        return { ...g, items };
+      });
+      await persist(next);
+    },
+    [persist],
+  );
+
   const renameGroup = useCallback(
     async (groupId: string, name: string) => {
       const next = groupsRef.current.map((g) =>
@@ -241,6 +257,7 @@ export function useAccordions(): UseAccordionsResult {
     addItem,
     moveItem,
     removeItem,
+    renameItem,
     renameGroup,
     toggleCollapse,
     swapGroups,

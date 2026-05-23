@@ -57,6 +57,7 @@ interface AccordionGroupProps {
   onToggleCollapse: (groupId: string) => Promise<void>;
   onDelete: (groupId: string) => Promise<void>;
   onRemoveItem: (groupId: string, itemIdx: number) => Promise<void>;
+  onRenameItem: (groupId: string, itemIdx: number, title: string) => Promise<void>;
 
   /** When false, drag handles and delete button are hidden */
   settingsOpen: boolean;
@@ -83,13 +84,14 @@ export default function AccordionGroup({
   onToggleCollapse,
   onDelete,
   onRemoveItem,
+  onRenameItem,
   settingsOpen,
 }: AccordionGroupProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(group.name);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // ── Inline rename ────────────────────────────────────────────────────
+  // ── Inline rename ────────────────────────────────────────────────────────
 
   function startEdit() {
     setDraft(group.name);
@@ -135,7 +137,7 @@ export default function AccordionGroup({
     .filter(Boolean)
     .join(" ");
 
-  // ── Render ────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div
@@ -258,6 +260,7 @@ export default function AccordionGroup({
                 itemDragOverInfo?.groupId === group.id && itemDragOverInfo?.itemIdx === idx
               }
               onRemove={() => onRemoveItem(group.id, idx)}
+              onRename={(title) => onRenameItem(group.id, idx, title)}
             />
           ))}
 
