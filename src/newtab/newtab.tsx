@@ -15,7 +15,7 @@ import styles from "./newtab.module.css";
 
 // -- Card size --
 
-const PAGE_PADDING_PCT = 0.1;
+const PAGE_PADDING_PCT = 0.2;
 const ACCORDION_BORDER = 3;
 const CONTENT_PAD_X = 24;
 const CARD_GAP = 10;
@@ -223,7 +223,6 @@ function App() {
             onClickAdd={setAddingToGroup}
             onRename={renameGroup}
             onToggleCollapse={toggleCollapse}
-            onDelete={handleDeleteGroup}
             onRemoveItem={handleRemoveItem}
             onRenameItem={handleRenameItem}
             settingsOpen={settingsOpen}
@@ -255,8 +254,9 @@ function App() {
           settings={settings}
           onUpdate={updateSettings}
           onClose={() => setSettingsOpen(false)}
-          groupCount={groups.length}
+          groups={groups.map((g) => ({ id: g.id, name: g.name }))}
           onAddGroup={handleAddGroup}
+          onDeleteGroup={handleDeleteGroup}
         />
 
         {addingToGroup !== null && (

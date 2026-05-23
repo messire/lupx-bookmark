@@ -4,13 +4,19 @@ import { saveBackgroundImage } from "../../newtab/useBackground";
 import { useWallpapers } from "../../newtab/useWallpapers";
 import styles from "./SettingsPanel.module.css";
 
+interface GroupInfo {
+  id: string;
+  name: string;
+}
+
 interface SettingsPanelProps {
   open: boolean;
   settings: Settings;
   onUpdate: (patch: Partial<Settings>) => void;
   onClose: () => void;
-  groupCount: number;
+  groups: GroupInfo[];
   onAddGroup: () => void;
+  onDeleteGroup: (id: string) => void;
 }
 
 const BG_TYPES: { value: BackgroundType; label: string }[] = [
@@ -36,8 +42,9 @@ export default function SettingsPanel({
   settings,
   onUpdate,
   onClose,
-  groupCount,
+  groups,
   onAddGroup,
+  onDeleteGroup,
 }: SettingsPanelProps) {
   const [oldSettings, setOldSettings] = useState<Settings | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -119,11 +126,25 @@ export default function SettingsPanel({
             <h3 className={styles.sectionTitle}>Layout</h3>
 
             <div className={styles.field}>
-              <span className={styles.label}>Groups &mdash; {groupCount}</span>
+              <span className={styles.label}>Groups</span>
               <button className={styles.stepBtn} onClick={onAddGroup} title="Add group">
                 +
               </button>
             </div>
+            {groups.map((g) => (
+              <div key={g.id} className={styles.groupRow}>
+                <span className={styles.groupRowName}>{g.name}</span>
+                <button
+                  className={styles.groupDeleteBtn}
+                  onClick={() => onDeleteGroup(g.id)}
+                  title="Delete group"
+                  aria-label={`Delete group ${g.name}`}
+                  disabled={groups.length <= 1}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
 
             <div className={styles.field}>
               <span className={styles.label}>Items per row</span>

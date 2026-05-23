@@ -55,7 +55,6 @@ interface AccordionGroupProps {
   onClickAdd: (groupId: string) => void;
   onRename: (groupId: string, name: string) => Promise<void>;
   onToggleCollapse: (groupId: string) => Promise<void>;
-  onDelete: (groupId: string) => Promise<void>;
   onRemoveItem: (groupId: string, itemIdx: number) => Promise<void>;
   onRenameItem: (groupId: string, itemIdx: number, title: string) => Promise<void>;
 
@@ -82,7 +81,6 @@ export default function AccordionGroup({
   onClickAdd,
   onRename,
   onToggleCollapse,
-  onDelete,
   onRemoveItem,
   onRenameItem,
   settingsOpen,
@@ -214,30 +212,6 @@ export default function AccordionGroup({
                 <MiniIcon key={item.id} item={item} />
               ))}
           </div>
-        )}
-
-        {/* Delete button - only visible when Settings panel is open */}
-        {settingsOpen && (
-          <button
-            className={styles.deleteBtn}
-            onClick={() => onDelete(group.id)}
-            title="Delete group"
-            aria-label="Delete group"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
         )}
       </div>
 
