@@ -13,15 +13,15 @@ const PIN_ICON = chrome.runtime.getURL("icons/pin.svg");
 // Empty slot sentinel used for the "add" card
 const EMPTY_SLOT: SpeedDialSlot = { id: "__add__", url: null, title: null };
 
-// Maps card style → extra CSS class on the accordion container
+// Maps card style to extra CSS class on the accordion container
 const ACCORDION_STYLE_CLASS: Record<CardStyle, string> = {
   minimal: styles.accordionMinimal,
   glass: styles.accordionGlass,
   bento: styles.accordionBento,
-  icons: styles.accordionMinimal, // same container look as minimal
+  icons: styles.accordionMinimal,
   neon: styles.accordionNeon,
   neumorphic: styles.accordionNeumorphic,
-  stamp: styles.accordionMinimal, // stamp aesthetic doesn't suit containers
+  stamp: styles.accordionMinimal,
   aurora: styles.accordionAurora,
 };
 
@@ -56,8 +56,9 @@ interface AccordionGroupProps {
   onRename: (groupId: string, name: string) => Promise<void>;
   onToggleCollapse: (groupId: string) => Promise<void>;
   onDelete: (groupId: string) => Promise<void>;
+  onRemoveItem: (groupId: string, itemIdx: number) => Promise<void>;
 
-  /** When false, drag handles and delete button are hidden — groups are locked */
+  /** When false, drag handles and delete button are hidden */
   settingsOpen: boolean;
 }
 
@@ -81,6 +82,7 @@ export default function AccordionGroup({
   onRename,
   onToggleCollapse,
   onDelete,
+  onRemoveItem,
   settingsOpen,
 }: AccordionGroupProps) {
   const [editing, setEditing] = useState(false);
@@ -255,6 +257,7 @@ export default function AccordionGroup({
               isDragOver={
                 itemDragOverInfo?.groupId === group.id && itemDragOverInfo?.itemIdx === idx
               }
+              onRemove={() => onRemoveItem(group.id, idx)}
             />
           ))}
 
@@ -266,7 +269,7 @@ export default function AccordionGroup({
               cardStyle={cardStyle}
               onClick={() => onClickAdd(group.id)}
               onDragStart={() => {
-                /* empty card can't be dragged */
+                /* empty card cannot be dragged */
               }}
               onDragOver={(e) => onItemDragOver(group.id, filledItems.length, e)}
               onDrop={() => onItemDrop(group.id, filledItems.length)}
@@ -282,7 +285,7 @@ export default function AccordionGroup({
   );
 }
 
-// ── Mini favicon (16×16) for collapsed state ──────────────────────────────
+// ── Mini favicon (16x16) for collapsed state ──────────────────────────────
 
 function MiniIcon({ item }: { item: FilledSlot }) {
   const [error, setError] = useState(false);

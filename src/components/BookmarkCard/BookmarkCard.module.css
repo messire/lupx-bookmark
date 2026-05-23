@@ -10,6 +10,7 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  position: relative; /* needed for .deleteBtn absolute positioning */
 }
 
 /* ── Filled card ── */
@@ -636,4 +637,109 @@
     animation: none;
     background-position: 50% 50%;
   }
+}
+
+/* ══════════════════════════════════════════════════════
+   Delete button & confirmation
+   ══════════════════════════════════════════════════════ */
+
+/* × button — hidden by default, appears on card hover */
+.deleteBtn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+  z-index: 2;
+  padding: 0;
+}
+
+.card:hover .deleteBtn {
+  opacity: 1;
+}
+
+.deleteBtn:hover {
+  background: rgba(220, 50, 50, 0.9);
+  transform: scale(1.15);
+}
+
+/* Confirmation state — card dims and shows inline prompt */
+.card.confirming {
+  cursor: default;
+}
+
+.confirmOverlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.confirmLabel {
+  font-size: clamp(10px, 1.1vw, 13px);
+  font-weight: 600;
+  opacity: 0.85;
+  text-align: center;
+}
+
+.confirmActions {
+  display: flex;
+  gap: 8px;
+}
+
+.confirmBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s ease,
+    transform 0.12s ease;
+  padding: 0;
+}
+
+.confirmYes {
+  background: rgba(220, 50, 50, 0.85);
+  color: #fff;
+}
+
+.confirmYes:hover {
+  background: rgba(200, 30, 30, 0.95);
+  transform: scale(1.1);
+}
+
+.confirmNo {
+  background: rgba(120, 120, 120, 0.5);
+  color: #fff;
+}
+
+.confirmNo:hover {
+  background: rgba(100, 100, 100, 0.75);
+  transform: scale(1.1);
 }

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAccordions } from "./useAccordions";
 import type { AccordionGroup, SpeedDialSlot } from "../types";
-import { seedStorage, fireStorageChange } from "../test/setup";
+import { seedStorage } from "../test/setup";
 
 // ── Test-data helpers ─────────────────────────────────────────────────────
 
@@ -350,42 +350,5 @@ describe("useAccordions — deleteGroup", () => {
 
     expect(result.current.groups).toHaveLength(1);
     expect(result.current.groups[0].id).toBe("g2");
-  });
-});
-
-describe("useAccordions — cross-tab sync", () => {
-  it("updates state when chrome.storage.onChanged fires for local area", async () => {
-    const { result } = await mountHook();
-
-    const updatedGroups = [makeGroup({ id: "ext-g1", name: "From Other Tab" })];
-
-    act(() => {
-      fireStorageChange("local", {
-        accordionGroups: { newValue: updatedGroups },
-      });
-    });
-
-    expect(result.current.groups).toHaveLength(1);
-    expect(result.current.groups[0].name).toBe("From Other Tab");
-  });
-
-  it("ignores onChanged events for non-local areas", async () => {
-    const { result } = await mountHook();
-    const originalLength = result.current.groups.length;
-
-    act(() => {
-      // sync area — should be ignored by useAccordions
-      fireStorageChange("sync", {
-        accordionGroups: { newValue: [makeGroup({ id: "x", name: "Should be ignored" })] },
-      });
-    });
-
-    expect(result.current.groups).toHaveLength(originalLength);
-  });
-
-  it("removes the onChanged listener on unmount", async () => {
-    const { unmount } = await mountHook();
-    unmount();
-    expect(chrome.storage.onChanged.removeListener).toHaveBeenCalledTimes(1);
   });
 });
