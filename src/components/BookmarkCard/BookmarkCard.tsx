@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { getFaviconUrl } from "../../utils/favicon";
+import { getFaviconUrl, getFaviconDDGUrl, getFaviconFallbackUrl } from "../../utils/favicon";
+import { useFaviconContext } from "../../newtab/FaviconCacheContext";
 import type { SpeedDialSlot, CardStyle } from "../../types";
 import styles from "./BookmarkCard.module.css";
 
@@ -15,6 +16,13 @@ const STYLE_CLASS: Record<CardStyle, string> = {
   stamp: styles.styleStamp,
   aurora: styles.styleAurora,
 };
+
+// Live fallback chain (used when favicon is not yet in cache):
+//   1. chrome://favicon2/ - Chrome internal cache; returns 1x1 transparent when empty
+//   2. DuckDuckGo          - broad coverage including niche/regional sites
+//   3. Google S2           - widely known fallback
+//   4. pin.svg             - final fallback
+type FaviconStage = "chrome" | "ddg" | "google" | "pin";
 
 interface BookmarkCardProps {
   slot: SpeedDialSlot;
@@ -41,7 +49,9 @@ export default function BookmarkCard({
   onRemove,
   onRename,
 }: BookmarkCardProps) {
-  const [imgError, setImgError] = useState(false);
+  const getFavicon = useFaviconContext();
+
+  const [faviconStage, setFaviconStage] = useState<FaviconStage>("chrome");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -67,8 +77,37 @@ export default function BookmarkCard({
 
   // Filled slot
   const url = slot.url;
-  const faviconUrl = getFaviconUrl(url, 64);
-  const iconSrc = !faviconUrl || imgError ? PIN_ICON : faviconUrl;
+  const cachedFavicon = getFavicon(url); // undefined=probing, ""=none, "url"=use it
+
+  function getIconSrc(): string {
+    // If cache has a confirmed working URL, use it directly
+    if (cachedFavicon !== undefined) {
+      return cachedFavicon || PIN_ICON;
+    }
+    // Cache not yet populated: use the live fallback chain
+    if (faviconStage === "chrome") return getFaviconUrl(url, 64);
+    if (faviconStage === "ddg") return getFaviconDDGUrl(url) || PIN_ICON;
+    if (faviconStage === "google") return getFaviconFallbackUrl(url, 64) || PIN_ICON;
+    return PIN_ICON;
+  }
+
+  // chrome://favicon2/ returns a 1x1 transparent pixel when not cached
+  function handleImgLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    if (
+      cachedFavicon === undefined &&
+      faviconStage === "chrome" &&
+      e.currentTarget.naturalWidth <= 1
+    ) {
+      setFaviconStage("ddg");
+    }
+  }
+
+  function handleImgError() {
+    if (cachedFavicon !== undefined) return; // cached result, no chain to advance
+    if (faviconStage === "chrome") setFaviconStage("ddg");
+    else if (faviconStage === "ddg") setFaviconStage("google");
+    else if (faviconStage === "google") setFaviconStage("pin");
+  }
 
   function handleClick(e: React.MouseEvent) {
     if (confirmDelete || editing) return;
@@ -76,7 +115,7 @@ export default function BookmarkCard({
     window.location.href = url;
   }
 
-  // ── Delete ────────────────────────────────────────────────────────────────
+  // -- Delete --
 
   function handleDeleteClick(e: React.MouseEvent) {
     e.preventDefault();
@@ -96,7 +135,7 @@ export default function BookmarkCard({
     setConfirmDelete(false);
   }
 
-  // ── Rename ────────────────────────────────────────────────────────────────
+  // -- Rename --
 
   function handleEditClick(e: React.MouseEvent) {
     e.preventDefault();
@@ -123,7 +162,7 @@ export default function BookmarkCard({
     }
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // -- Render --
 
   const isInteracting = confirmDelete || editing;
 
@@ -207,10 +246,11 @@ export default function BookmarkCard({
           )}
           <div className={styles.thumbnail}>
             <img
-              src={iconSrc}
+              src={getIconSrc()}
               alt=""
               className={styles.favicon}
-              onError={() => setImgError(true)}
+              onLoad={handleImgLoad}
+              onError={handleImgError}
             />
           </div>
           {showTitle && cardStyle !== "icons" && (
