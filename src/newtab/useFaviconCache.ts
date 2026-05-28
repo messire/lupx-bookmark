@@ -77,7 +77,7 @@ export function useFaviconCache(bookmarkUrls: string[]): {
   }, []);
 
   // Probe any uncached URLs whenever the bookmark list changes
-   
+
   const urlsKey = bookmarkUrls.join(",");
   useEffect(() => {
     if (bookmarkUrls.length === 0) return;

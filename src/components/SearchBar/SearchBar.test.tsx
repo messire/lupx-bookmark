@@ -28,7 +28,7 @@ beforeEach(() => {
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 function renderBar(engine: SearchEngine = "google", onEngineChange = vi.fn()) {
-  render(<SearchBar engine={engine} onEngineChange={onEngineChange} />);
+  render(<SearchBar engine={engine} onEngineChange={onEngineChange} cardStyle="minimal" />);
   return { onEngineChange };
 }
 
