@@ -199,7 +199,11 @@ function App() {
     <FaviconCacheContext.Provider value={getFavicon}>
       <div className={styles.page} onDragEnd={handleDragEnd}>
         <div className={styles.searchBarRow}>
-          <SearchBar engine={settings.searchEngine} onEngineChange={handleEngineChange} />
+          <SearchBar
+            engine={settings.searchEngine}
+            onEngineChange={handleEngineChange}
+            cardStyle={settings.cardStyle}
+          />
         </div>
 
         {groups.map((group, idx) => (

@@ -40,7 +40,8 @@ export type CardStyle =
   | "glass"
   | "bento"
   | "icons"
-  | "neon"
+  | "neon-pink"
+  | "neon-cyan"
   | "neumorphic"
   | "stamp"
   | "aurora";
