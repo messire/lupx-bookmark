@@ -108,7 +108,7 @@ describe("SettingsPanel — appearance toggles", () => {
   it("calls onUpdate with the selected card style when a card style button is clicked", () => {
     const { onUpdate } = renderPanel();
 
-    fireEvent.click(screen.getByText("Glass").closest("button")!);
+    fireEvent.click(screen.getByText("Glass").closest("button") as HTMLButtonElement);
 
     expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ cardStyle: "glass" }));
   });

@@ -22,7 +22,7 @@ function getInput() {
 }
 
 function getForm() {
-  return getInput().closest("form")!;
+  return getInput().closest("form") as HTMLFormElement;
 }
 
 describe("AddSlotModal — initial render", () => {
@@ -89,7 +89,7 @@ describe("AddSlotModal — suggestions", () => {
     mockHistorySearch([{ id: "1", url: "https://github.com", title: "GitHub", visitCount: 10 }]);
     const { onConfirm } = renderModal();
     await act(async () => {});
-    fireEvent.click(screen.getByText("GitHub").closest("button")!);
+    fireEvent.click(screen.getByText("GitHub").closest("button") as HTMLButtonElement);
     expect(onConfirm).toHaveBeenCalledWith("https://github.com", "GitHub");
   });
 
@@ -125,7 +125,8 @@ describe("AddSlotModal — keyboard & overlay", () => {
     const { onClose } = renderModal();
     await act(async () => {});
     // Structure: overlay-div > modal-div > form > input
-    const overlay = getInput().closest("form")!.parentElement!.parentElement!;
+    const form = getInput().closest("form") as HTMLFormElement;
+    const overlay = (form.parentElement as HTMLElement).parentElement as HTMLElement;
     fireEvent.click(overlay);
     expect(onClose).toHaveBeenCalled();
   });
@@ -135,7 +136,7 @@ describe("AddSlotModal — keyboard & overlay", () => {
     const { onClose } = renderModal();
     await act(async () => {});
     // modal-div has stopPropagation; clicking it should not reach the overlay
-    const modal = getInput().closest("form")!.parentElement!;
+    const modal = (getInput().closest("form") as HTMLFormElement).parentElement as HTMLElement;
     fireEvent.click(modal);
     expect(onClose).not.toHaveBeenCalled();
   });
