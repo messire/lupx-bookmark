@@ -388,35 +388,59 @@
    NEW ACCORDION STYLE VARIANTS
    ══════════════════════════════════════════════════════════════════════ */
 
-/* ── Neon: deep-dark container with accent border glow ───────────────── */
-.accordionNeon {
-  background: rgba(6, 6, 14, 0.92);
-  border: 1.5px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
-  color: #ccd4ff;
+/* ── Neon Pink / Neon Cyan — Cyberpunk accordions ────────────────────── */
+
+@keyframes neonBreathAccordion {
+  0%,
+  100% {
+    border-color: color-mix(in srgb, var(--neon-accent) 40%, transparent);
+    box-shadow:
+      0 0 4px color-mix(in srgb, var(--neon-accent) 28%, transparent),
+      0 0 10px color-mix(in srgb, var(--neon-accent) 12%, transparent);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--neon-accent) 80%, transparent);
+    box-shadow:
+      0 0 8px color-mix(in srgb, var(--neon-accent) 55%, transparent),
+      0 0 20px color-mix(in srgb, var(--neon-accent) 26%, transparent),
+      0 0 36px color-mix(in srgb, var(--neon-accent) 10%, transparent);
+  }
 }
 
-:root[data-bg="dark"] .accordion.accordionNeon,
-:root[data-bg="image"] .accordion.accordionNeon {
+/* Accent color tokens */
+.accordionNeonPink {
+  --neon-accent: #ff2070;
+}
+.accordionNeonCyan {
+  --neon-accent: #00e5ff;
+}
+
+/* Shared neon accordion base */
+.accordionNeonPink,
+.accordionNeonCyan {
+  background: rgba(6, 6, 14, 0.92);
+  border: 1.5px solid color-mix(in srgb, var(--neon-accent) 55%, transparent);
+  color: #ccd4ff;
+  animation: neonBreathAccordion 3.2s ease-in-out infinite;
+}
+
+.accordion.accordionNeonPink,
+.accordion.accordionNeonCyan {
   background: rgba(4, 4, 10, 0.95);
-  border-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
   color: #d0d8ff;
 }
 
-:root[data-bg="light"] .accordion.accordionNeon {
-  background: rgba(8, 8, 20, 0.92);
-  border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
-  color: #ccd4ff;
+.accordionNeonPink .content,
+.accordionNeonCyan .content {
+  border-top-color: color-mix(in srgb, var(--neon-accent) 20%, transparent);
 }
 
-.accordionNeon .content {
-  border-top-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
-}
-
-.accordion.accordionNeon.groupDragOver {
-  border-color: var(--color-accent);
+.accordion.accordionNeonPink.groupDragOver,
+.accordion.accordionNeonCyan.groupDragOver {
+  border-color: var(--neon-accent);
   box-shadow:
-    0 0 8px color-mix(in srgb, var(--color-accent) 50%, transparent),
-    0 0 20px color-mix(in srgb, var(--color-accent) 24%, transparent);
+    0 0 8px color-mix(in srgb, var(--neon-accent) 55%, transparent),
+    0 0 20px color-mix(in srgb, var(--neon-accent) 26%, transparent);
 }
 
 /* ── Neumorphic: extruded-from-page container ────────────────────────── */

@@ -3,7 +3,7 @@
   "name": "LUPX Bookmark",
   "version": "0.1.0",
   "description": "A visual bookmark grid for your new tab page.",
-  "permissions": ["history", "storage"],
+  "permissions": ["history", "storage", "favicon"],
   "chrome_url_overrides": {
     "newtab": "src/newtab/newtab.html"
   },

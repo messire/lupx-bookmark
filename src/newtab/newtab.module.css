@@ -60,7 +60,7 @@ body {
 
 /* ── Page layout ── */
 .page {
-  padding: 24px 10% 80px;
+  padding: 24px 20% 80px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -68,6 +68,7 @@ body {
 
 .searchBarRow {
   margin-top: 150px;
+  margin-bottom: 24px;
 }
 
 .settingsBtn {

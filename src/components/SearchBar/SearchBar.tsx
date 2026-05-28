@@ -1,11 +1,12 @@
 import { useState, useRef } from "react";
-import type { SearchEngine } from "../../types";
-import { getFaviconUrl } from "../../utils/favicon";
+import type { CardStyle, SearchEngine } from "../../types";
+import { getFaviconUrl, getFaviconDDGUrl } from "../../utils/favicon";
 import styles from "./SearchBar.module.css";
 
 interface SearchBarProps {
   engine: SearchEngine;
   onEngineChange: (engine: SearchEngine) => void;
+  cardStyle: CardStyle;
 }
 
 interface EngineConfig {
@@ -36,9 +37,15 @@ const ENGINES: EngineConfig[] = [
   },
 ];
 
-export default function SearchBar({ engine, onEngineChange }: SearchBarProps) {
+const NEON_CLASS: Partial<Record<CardStyle, string>> = {
+  "neon-pink": styles.barNeonPink,
+  "neon-cyan": styles.barNeonCyan,
+};
+
+export default function SearchBar({ engine, onEngineChange, cardStyle }: SearchBarProps) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const neonClass = NEON_CLASS[cardStyle] ?? "";
 
   function handleSearch() {
     const q = query.trim();
@@ -52,7 +59,7 @@ export default function SearchBar({ engine, onEngineChange }: SearchBarProps) {
   }
 
   return (
-    <div className={styles.bar}>
+    <div className={`${styles.bar}${neonClass ? ` ${neonClass}` : ""}`}>
       {/* Engine selector — icon buttons */}
       <div className={styles.engineGroup} role="group" aria-label="Search engine">
         {ENGINES.map((e) => (
@@ -92,6 +99,9 @@ export default function SearchBar({ engine, onEngineChange }: SearchBarProps) {
 
 // ── Single engine icon button ─────────────────────────────────────────────
 
+// Fallback chain: chrome favicon → DDG → letter
+type FaviconStage = "chrome" | "ddg" | "letter";
+
 function EngineButton({
   config,
   active,
@@ -101,8 +111,18 @@ function EngineButton({
   active: boolean;
   onClick: () => void;
 }) {
-  const [imgError, setImgError] = useState(false);
-  const iconUrl = getFaviconUrl(config.homeUrl, 32);
+  const [stage, setStage] = useState<FaviconStage>("chrome");
+
+  const iconUrl =
+    stage === "chrome"
+      ? getFaviconUrl(config.homeUrl, 32)
+      : stage === "ddg"
+        ? getFaviconDDGUrl(config.homeUrl)
+        : "";
+
+  function handleError() {
+    setStage((prev) => (prev === "chrome" ? "ddg" : "letter"));
+  }
 
   return (
     <button
@@ -111,17 +131,16 @@ function EngineButton({
       title={config.name}
       aria-pressed={active}
     >
-      {!imgError ? (
+      {stage !== "letter" ? (
         <img
           src={iconUrl}
           alt={config.name}
           width={18}
           height={18}
           className={styles.engineIcon}
-          onError={() => setImgError(true)}
+          onError={handleError}
         />
       ) : (
-        // Fallback: first letter of engine name
         <span className={styles.engineFallback}>{config.name[0]}</span>
       )}
     </button>

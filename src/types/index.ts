@@ -40,7 +40,8 @@ export type CardStyle =
   | "glass"
   | "bento"
   | "icons"
-  | "neon"
+  | "neon-pink"
+  | "neon-cyan"
   | "neumorphic"
   | "stamp"
   | "aurora";
@@ -50,9 +51,11 @@ export type SearchEngine = "google" | "yandex" | "duckduckgo";
 /** Hard-coded maximum bookmarks per accordion group. */
 export const MAX_ITEMS_PER_ACCORDION = 16;
 
-// User-facing settings stored in chrome.storage.sync
+/** Bump this when the Settings schema changes in a breaking way. */
+export const SETTINGS_VERSION = 1;
+
+// User-facing settings stored in chrome.storage.local
 export interface Settings {
-  accordionCount: number; // how many accordion groups (default: 3)
   itemsPerRow: number; // bookmark cards per row (default: 5)
   showTitles: boolean; // show titles below cards (default: true)
   theme: "light" | "dark" | "system";
@@ -69,7 +72,6 @@ export const DEFAULT_BACKGROUND: Background = {
 };
 
 export const DEFAULT_SETTINGS: Settings = {
-  accordionCount: 3,
   itemsPerRow: 5,
   showTitles: true,
   theme: "system",

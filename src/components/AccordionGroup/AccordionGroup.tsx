@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import BookmarkCard from "../BookmarkCard/BookmarkCard";
-import { getFaviconUrl } from "../../utils/favicon";
+import { getFaviconUrl, getFaviconDDGUrl, getFaviconFallbackUrl } from "../../utils/favicon";
 import type { AccordionGroup as AccordionGroupType, CardStyle, SpeedDialSlot } from "../../types";
 import { MAX_ITEMS_PER_ACCORDION } from "../../types";
 import styles from "./AccordionGroup.module.css";
@@ -13,15 +13,16 @@ const PIN_ICON = chrome.runtime.getURL("icons/pin.svg");
 // Empty slot sentinel used for the "add" card
 const EMPTY_SLOT: SpeedDialSlot = { id: "__add__", url: null, title: null };
 
-// Maps card style → extra CSS class on the accordion container
+// Maps card style to extra CSS class on the accordion container
 const ACCORDION_STYLE_CLASS: Record<CardStyle, string> = {
   minimal: styles.accordionMinimal,
   glass: styles.accordionGlass,
   bento: styles.accordionBento,
-  icons: styles.accordionMinimal, // same container look as minimal
-  neon: styles.accordionNeon,
+  icons: styles.accordionMinimal,
+  "neon-pink": styles.accordionNeonPink,
+  "neon-cyan": styles.accordionNeonCyan,
   neumorphic: styles.accordionNeumorphic,
-  stamp: styles.accordionMinimal, // stamp aesthetic doesn't suit containers
+  stamp: styles.accordionMinimal,
   aurora: styles.accordionAurora,
 };
 
@@ -55,9 +56,10 @@ interface AccordionGroupProps {
   onClickAdd: (groupId: string) => void;
   onRename: (groupId: string, name: string) => Promise<void>;
   onToggleCollapse: (groupId: string) => Promise<void>;
-  onDelete: (groupId: string) => Promise<void>;
+  onRemoveItem: (groupId: string, itemIdx: number) => Promise<void>;
+  onRenameItem: (groupId: string, itemIdx: number, title: string) => Promise<void>;
 
-  /** When false, drag handles and delete button are hidden — groups are locked */
+  /** When false, drag handles and delete button are hidden */
   settingsOpen: boolean;
 }
 
@@ -80,14 +82,15 @@ export default function AccordionGroup({
   onClickAdd,
   onRename,
   onToggleCollapse,
-  onDelete,
+  onRemoveItem,
+  onRenameItem,
   settingsOpen,
 }: AccordionGroupProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(group.name);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // ── Inline rename ────────────────────────────────────────────────────
+  // -- Inline rename --
 
   function startEdit() {
     setDraft(group.name);
@@ -112,14 +115,14 @@ export default function AccordionGroup({
     }
   }
 
-  // ── Drag handle for group reordering ─────────────────────────────────
+  // -- Drag handle for group reordering --
 
   function handleGroupDragStart(e: React.DragEvent) {
     e.dataTransfer.effectAllowed = "move";
     onGroupDragStart(groupIndex);
   }
 
-  // ── Layout helpers ────────────────────────────────────────────────────
+  // -- Layout helpers --
 
   const filledItems = group.items;
   const showAddCard = filledItems.length < MAX_ITEMS_PER_ACCORDION;
@@ -133,7 +136,7 @@ export default function AccordionGroup({
     .filter(Boolean)
     .join(" ");
 
-  // ── Render ────────────────────────────────────────────────────────────
+  // -- Render --
 
   return (
     <div
@@ -141,9 +144,9 @@ export default function AccordionGroup({
       onDragOver={settingsOpen ? (e) => onGroupDragOver(groupIndex, e) : undefined}
       onDrop={settingsOpen ? () => onGroupDrop(groupIndex) : undefined}
     >
-      {/* ── Header ── */}
+      {/* -- Header -- */}
       <div className={styles.header}>
-        {/* Drag handle — only visible when Settings panel is open */}
+        {/* Drag handle - only visible when Settings panel is open */}
         {settingsOpen && (
           <div
             className={styles.dragHandle}
@@ -211,33 +214,9 @@ export default function AccordionGroup({
               ))}
           </div>
         )}
-
-        {/* Delete button — only visible when Settings panel is open */}
-        {settingsOpen && (
-          <button
-            className={styles.deleteBtn}
-            onClick={() => onDelete(group.id)}
-            title="Delete group"
-            aria-label="Delete group"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        )}
       </div>
 
-      {/* ── Card grid (expanded only) ── */}
+      {/* -- Card grid (expanded only) -- */}
       {!group.collapsed && (
         <div className={styles.content} style={{ gridTemplateColumns: gridCols }}>
           {filledItems.map((item, idx) => (
@@ -255,6 +234,8 @@ export default function AccordionGroup({
               isDragOver={
                 itemDragOverInfo?.groupId === group.id && itemDragOverInfo?.itemIdx === idx
               }
+              onRemove={() => onRemoveItem(group.id, idx)}
+              onRename={(title) => onRenameItem(group.id, idx, title)}
             />
           ))}
 
@@ -266,7 +247,7 @@ export default function AccordionGroup({
               cardStyle={cardStyle}
               onClick={() => onClickAdd(group.id)}
               onDragStart={() => {
-                /* empty card can't be dragged */
+                /* empty card cannot be dragged */
               }}
               onDragOver={(e) => onItemDragOver(group.id, filledItems.length, e)}
               onDrop={() => onItemDrop(group.id, filledItems.length)}
@@ -282,11 +263,29 @@ export default function AccordionGroup({
   );
 }
 
-// ── Mini favicon (16×16) for collapsed state ──────────────────────────────
+// -- Mini favicon (16x16) for collapsed state --
+
+type MiniStage = "chrome" | "ddg" | "google" | "pin";
 
 function MiniIcon({ item }: { item: FilledSlot }) {
-  const [error, setError] = useState(false);
-  const src = !error ? (getFaviconUrl(item.url, 16) ?? PIN_ICON) : PIN_ICON;
+  const [stage, setStage] = useState<MiniStage>("chrome");
+
+  function getSrc(): string {
+    if (stage === "chrome") return getFaviconUrl(item.url, 16);
+    if (stage === "ddg") return getFaviconDDGUrl(item.url) || PIN_ICON;
+    if (stage === "google") return getFaviconFallbackUrl(item.url, 16) || PIN_ICON;
+    return PIN_ICON;
+  }
+
+  function handleLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    if (stage === "chrome" && e.currentTarget.naturalWidth <= 1) setStage("ddg");
+  }
+
+  function handleError() {
+    if (stage === "chrome") setStage("ddg");
+    else if (stage === "ddg") setStage("google");
+    else if (stage === "google") setStage("pin");
+  }
 
   return (
     <a
@@ -299,12 +298,13 @@ function MiniIcon({ item }: { item: FilledSlot }) {
       }}
     >
       <img
-        src={src}
+        src={getSrc()}
         alt=""
         width={16}
         height={16}
         className={styles.miniIconImg}
-        onError={() => setError(true)}
+        onLoad={handleLoad}
+        onError={handleError}
       />
     </a>
   );

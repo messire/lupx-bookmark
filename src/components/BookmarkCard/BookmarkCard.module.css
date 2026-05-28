@@ -10,6 +10,7 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  position: relative; /* needed for .deleteBtn absolute positioning */
 }
 
 /* ── Filled card ── */
@@ -265,73 +266,99 @@
    NEW CARD STYLE VARIANTS
    ══════════════════════════════════════════════════════════════════════ */
 
-/* ── Neon / Synthwave ────────────────────────────────────────────────────
+/* ── Neon Pink / Neon Cyan — Cyberpunk ───────────────────────────────────
  *
  * Design intent:
- *   Inspired by glowing neon signs in a cyberpunk city at night.
- *   Cards are always near-black so the accent glow remains visible on any
- *   background type — including light. A thin border emits layered neon
- *   halos on hover (3 concentric glow rings, each more diffuse than the
- *   last). The favicon gains a matching color drop-shadow halo.
- *   Accent color adapts to dark/light theme via var(--color-accent).
+ *   Two cyberpunk neon variants. Cards are near-black so the accent glow
+ *   pops on any background. Borders "breathe" with a slow pulse animation
+ *   mimicking a real neon tube. On hover: 3-ring glow + favicon halo.
+ *
+ *   Pink:  --neon-accent: #ff2070  (hot cyberpunk magenta-pink)
+ *   Cyan:  --neon-accent: #00e5ff  (electric cyan)
  *
  * ──────────────────────────────────────────────────────────────────────── */
 
-.styleNeon {
+@keyframes neonBreathCard {
+  0%,
+  100% {
+    border-color: color-mix(in srgb, var(--neon-accent) 40%, transparent);
+    box-shadow:
+      0 0 3px color-mix(in srgb, var(--neon-accent) 30%, transparent),
+      0 0 8px color-mix(in srgb, var(--neon-accent) 14%, transparent);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--neon-accent) 80%, transparent);
+    box-shadow:
+      0 0 6px color-mix(in srgb, var(--neon-accent) 60%, transparent),
+      0 0 16px color-mix(in srgb, var(--neon-accent) 28%, transparent),
+      0 0 28px color-mix(in srgb, var(--neon-accent) 12%, transparent);
+  }
+}
+
+/* Accent color tokens */
+.styleNeonPink {
+  --neon-accent: #ff2070;
+}
+.styleNeonCyan {
+  --neon-accent: #00e5ff;
+}
+
+/* Shared neon base */
+.styleNeonPink,
+.styleNeonCyan {
   background: rgba(6, 6, 14, 0.92);
-  border: 1.5px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--neon-accent) 55%, transparent);
   border-radius: 10px;
   color: #ccd4ff;
+  animation: neonBreathCard 3s ease-in-out infinite;
   transition:
     border-color 0.22s ease,
-    box-shadow 0.28s ease,
     transform 0.18s ease,
     background 0.22s ease;
 }
 
-.styleNeon .favicon {
-  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--color-accent) 45%, transparent));
+.styleNeonPink .favicon,
+.styleNeonCyan .favicon {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--neon-accent) 45%, transparent));
   transition: filter 0.25s ease;
 }
 
-/* Hover: neon glow radiates through 3 concentric rings */
-:root[data-bg="none"] .card.styleNeon:hover,
-:root[data-bg="dark"] .card.styleNeon:hover,
-:root[data-bg="image"] .card.styleNeon:hover,
-:root[data-bg="light"] .card.styleNeon:hover {
+/* Hover: pause breath, full 3-ring glow */
+.card.styleNeonPink:hover,
+.card.styleNeonCyan:hover {
+  animation-play-state: paused;
   background: rgba(8, 8, 22, 0.98);
-  border-color: var(--color-accent);
+  border-color: var(--neon-accent);
   box-shadow:
-    0 0 8px color-mix(in srgb, var(--color-accent) 60%, transparent),
-    0 0 20px color-mix(in srgb, var(--color-accent) 32%, transparent),
-    0 0 45px color-mix(in srgb, var(--color-accent) 14%, transparent);
+    0 0 8px color-mix(in srgb, var(--neon-accent) 65%, transparent),
+    0 0 20px color-mix(in srgb, var(--neon-accent) 35%, transparent),
+    0 0 45px color-mix(in srgb, var(--neon-accent) 15%, transparent);
   transform: translateY(-3px);
   color: #ffffff;
 }
 
-:root[data-bg="none"] .card.styleNeon:hover .favicon,
-:root[data-bg="dark"] .card.styleNeon:hover .favicon,
-:root[data-bg="image"] .card.styleNeon:hover .favicon,
-:root[data-bg="light"] .card.styleNeon:hover .favicon {
-  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--color-accent) 72%, transparent))
-    drop-shadow(0 0 22px color-mix(in srgb, var(--color-accent) 38%, transparent));
+.card.styleNeonPink:hover .favicon,
+.card.styleNeonCyan:hover .favicon {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--neon-accent) 75%, transparent))
+    drop-shadow(0 0 22px color-mix(in srgb, var(--neon-accent) 40%, transparent));
 }
 
-.emptyCard.styleNeon {
+/* Empty slot */
+.emptyCard.styleNeonPink,
+.emptyCard.styleNeonCyan {
   background: rgba(6, 6, 14, 0.85);
   border-style: dashed;
-  border-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  border-color: color-mix(in srgb, var(--neon-accent) 35%, transparent);
 }
 
-:root[data-bg="none"] .emptyCard.styleNeon:hover,
-:root[data-bg="dark"] .emptyCard.styleNeon:hover,
-:root[data-bg="image"] .emptyCard.styleNeon:hover,
-:root[data-bg="light"] .emptyCard.styleNeon:hover {
+.emptyCard.styleNeonPink:hover,
+.emptyCard.styleNeonCyan:hover {
+  animation-play-state: paused;
   background: rgba(8, 8, 22, 0.95);
-  border-color: var(--color-accent);
+  border-color: var(--neon-accent);
   box-shadow:
-    0 0 8px color-mix(in srgb, var(--color-accent) 50%, transparent),
-    0 0 24px color-mix(in srgb, var(--color-accent) 22%, transparent);
+    0 0 8px color-mix(in srgb, var(--neon-accent) 50%, transparent),
+    0 0 24px color-mix(in srgb, var(--neon-accent) 22%, transparent);
   transform: translateY(-3px);
 }
 
@@ -636,4 +663,192 @@
     animation: none;
     background-position: 50% 50%;
   }
+}
+
+/* ══════════════════════════════════════════════════════
+   Delete button & confirmation
+   ══════════════════════════════════════════════════════ */
+
+/* × button — hidden by default, appears on card hover */
+.deleteBtn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+  z-index: 2;
+  padding: 0;
+}
+
+.card:hover .deleteBtn {
+  opacity: 1;
+}
+
+.deleteBtn:hover {
+  background: rgba(220, 50, 50, 0.9);
+  transform: scale(1.15);
+}
+
+/* Confirmation state — card dims and shows inline prompt */
+.card.confirming {
+  cursor: default;
+}
+
+.confirmOverlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.confirmLabel {
+  font-size: clamp(10px, 1.1vw, 13px);
+  font-weight: 600;
+  opacity: 0.85;
+  text-align: center;
+}
+
+.confirmActions {
+  display: flex;
+  gap: 8px;
+}
+
+.confirmBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s ease,
+    transform 0.12s ease;
+  padding: 0;
+}
+
+.confirmYes {
+  background: rgba(220, 50, 50, 0.85);
+  color: #fff;
+}
+
+.confirmYes:hover {
+  background: rgba(200, 30, 30, 0.95);
+  transform: scale(1.1);
+}
+
+.confirmNo {
+  background: rgba(120, 120, 120, 0.5);
+  color: #fff;
+}
+
+.confirmNo:hover {
+  background: rgba(100, 100, 100, 0.75);
+  transform: scale(1.1);
+}
+
+/* ══════════════════════════════════════════════════════
+   Edit button & rename overlay
+   ══════════════════════════════════════════════════════ */
+
+/* ✏ button — hidden by default, appears on card hover, left of × */
+.editBtn {
+  position: absolute;
+  top: 5px;
+  right: 29px; /* 5px gap + 20px deleteBtn + 4px spacing */
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+  z-index: 2;
+  padding: 0;
+}
+
+.card:hover .editBtn {
+  opacity: 1;
+}
+
+.editBtn:hover {
+  background: rgba(60, 120, 220, 0.9);
+  transform: scale(1.15);
+}
+
+/* Editing state */
+.card.editing {
+  cursor: default;
+}
+
+.editOverlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.editInput {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: clamp(10px, 1.1vw, 13px);
+  text-align: center;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.editInput:focus {
+  border-color: rgba(255, 255, 255, 0.75);
+  background: rgba(0, 0, 0, 0.7);
+}
+
+:root[data-bg="light"] .editInput {
+  background: rgba(255, 255, 255, 0.8);
+  color: #111;
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+:root[data-bg="light"] .editInput:focus {
+  border-color: rgba(0, 0, 0, 0.6);
+  background: rgba(255, 255, 255, 0.95);
 }

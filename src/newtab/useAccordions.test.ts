@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAccordions } from "./useAccordions";
 import type { AccordionGroup, SpeedDialSlot } from "../types";
-import { seedStorage, fireStorageChange } from "../test/setup";
+import { seedStorage } from "../test/setup";
 
 // ── Test-data helpers ─────────────────────────────────────────────────────
 
@@ -17,10 +17,8 @@ function makeSlot(overrides: Partial<SpeedDialSlot> & { id: string }): SpeedDial
 }
 
 /** Mount the hook and wait for the async initial load to complete. */
-async function mountHook(count = 3) {
-  const hook = renderHook(({ n }) => useAccordions(n), {
-    initialProps: { n: count },
-  });
+async function mountHook() {
+  const hook = renderHook(() => useAccordions());
   await act(async () => {});
   return hook;
 }
@@ -29,16 +27,11 @@ async function mountHook(count = 3) {
 
 describe("useAccordions — initial load", () => {
   it("creates default starter groups on a fresh install", async () => {
-    const { result } = await mountHook(3);
+    const { result } = await mountHook();
 
     expect(result.current.groups).toHaveLength(3);
     const names = result.current.groups.map((g) => g.name);
     expect(names).toEqual(["Work", "Personal", "Tools"]);
-  });
-
-  it("respects accordionCount on a fresh install", async () => {
-    const { result } = await mountHook(2);
-    expect(result.current.groups).toHaveLength(2);
   });
 
   it("loads groups previously saved in chrome.storage.local", async () => {
@@ -48,11 +41,23 @@ describe("useAccordions — initial load", () => {
     ];
     seedStorage("local", { accordionGroups: saved });
 
-    const { result } = await mountHook(2);
+    const { result } = await mountHook();
 
     expect(result.current.groups).toHaveLength(2);
     expect(result.current.groups[0].id).toBe("g1");
     expect(result.current.groups[1].id).toBe("g2");
+  });
+
+  it("does not truncate or add groups based on any external count", async () => {
+    // 5 groups in storage — they should all survive
+    const saved = Array.from({ length: 5 }, (_, i) =>
+      makeGroup({ id: `g${i}`, name: `Group ${i}` }),
+    );
+    seedStorage("local", { accordionGroups: saved });
+
+    const { result } = await mountHook();
+
+    expect(result.current.groups).toHaveLength(5);
   });
 
   it("migrates bookmarks from the legacy flat-grid format", async () => {
@@ -63,7 +68,7 @@ describe("useAccordions — initial load", () => {
     ];
     seedStorage("sync", { speedDial: legacy });
 
-    const { result } = await mountHook(1);
+    const { result } = await mountHook();
 
     expect(result.current.groups).toHaveLength(1);
     expect(result.current.groups[0].name).toBe("Bookmarks");
@@ -73,33 +78,33 @@ describe("useAccordions — initial load", () => {
   });
 });
 
-describe("useAccordions — accordionCount sync", () => {
-  it("adds new groups when accordionCount increases", async () => {
-    const { result, rerender } = await mountHook(2);
-    expect(result.current.groups).toHaveLength(2);
-
-    rerender({ n: 4 });
-    await act(async () => {});
-
-    expect(result.current.groups).toHaveLength(4);
-  });
-
-  it("removes trailing groups when accordionCount decreases", async () => {
-    const groups = [
-      makeGroup({ id: "g1", name: "A" }),
-      makeGroup({ id: "g2", name: "B" }),
-      makeGroup({ id: "g3", name: "C" }),
-    ];
+describe("useAccordions — addGroup", () => {
+  it("appends a new group at the end", async () => {
+    const groups = [makeGroup({ id: "g1", name: "Work" })];
     seedStorage("local", { accordionGroups: groups });
 
-    const { result, rerender } = await mountHook(3);
-    expect(result.current.groups).toHaveLength(3);
+    const { result } = await mountHook();
 
-    rerender({ n: 1 });
-    await act(async () => {});
+    await act(async () => {
+      await result.current.addGroup();
+    });
 
-    expect(result.current.groups).toHaveLength(1);
-    expect(result.current.groups[0].name).toBe("A");
+    expect(result.current.groups).toHaveLength(2);
+    expect(result.current.groups[0].id).toBe("g1");
+    expect(result.current.groups[1].name).toBe("New");
+    expect(result.current.groups[1].items).toHaveLength(0);
+  });
+
+  it("persists the new group to chrome.storage.local", async () => {
+    const { result } = await mountHook();
+
+    await act(async () => {
+      await result.current.addGroup();
+    });
+
+    expect(chrome.storage.local.set).toHaveBeenLastCalledWith(
+      expect.objectContaining({ accordionGroups: expect.any(Array) }),
+    );
   });
 });
 
@@ -111,7 +116,7 @@ describe("useAccordions — addItem", () => {
     ];
     seedStorage("local", { accordionGroups: groups });
 
-    const { result } = await mountHook(2);
+    const { result } = await mountHook();
 
     await act(async () => {
       await result.current.addItem("g2", "https://example.com", "Example");
@@ -127,7 +132,7 @@ describe("useAccordions — addItem", () => {
     const groups = [makeGroup({ id: "g1", name: "Work" })];
     seedStorage("local", { accordionGroups: groups });
 
-    const { result } = await mountHook(1);
+    const { result } = await mountHook();
 
     await act(async () => {
       await result.current.addItem("g1", "https://a.com", "A");
@@ -139,6 +144,41 @@ describe("useAccordions — addItem", () => {
   });
 });
 
+describe("useAccordions — removeItem", () => {
+  it("removes the bookmark at the given index", async () => {
+    const slotA = makeSlot({ id: "s1", url: "https://a.com", title: "A" });
+    const slotB = makeSlot({ id: "s2", url: "https://b.com", title: "B" });
+    const groups = [makeGroup({ id: "g1", name: "Work", items: [slotA, slotB] })];
+    seedStorage("local", { accordionGroups: groups });
+
+    const { result } = await mountHook();
+
+    await act(async () => {
+      await result.current.removeItem("g1", 0);
+    });
+
+    expect(result.current.groups[0].items).toHaveLength(1);
+    expect(result.current.groups[0].items[0].id).toBe("s2");
+  });
+
+  it("leaves other groups untouched", async () => {
+    const slot = makeSlot({ id: "s1", url: "https://a.com", title: "A" });
+    const groups = [
+      makeGroup({ id: "g1", name: "Work", items: [slot] }),
+      makeGroup({ id: "g2", name: "Personal" }),
+    ];
+    seedStorage("local", { accordionGroups: groups });
+
+    const { result } = await mountHook();
+
+    await act(async () => {
+      await result.current.removeItem("g1", 0);
+    });
+
+    expect(result.current.groups[1].items).toHaveLength(0);
+  });
+});
+
 describe("useAccordions — moveItem", () => {
   it("swaps two cards within the same group", async () => {
     const slotA = makeSlot({ id: "s1", url: "https://a.com", title: "A" });
@@ -146,7 +186,7 @@ describe("useAccordions — moveItem", () => {
     const groups = [makeGroup({ id: "g1", name: "Work", items: [slotA, slotB] })];
     seedStorage("local", { accordionGroups: groups });
 
-    const { result } = await mountHook(1);
+    const { result } = await mountHook();
 
     await act(async () => {
       await result.current.moveItem("g1", 0, "g1", 1);
@@ -165,7 +205,7 @@ describe("useAccordions — moveItem", () => {
     ];
     seedStorage("local", { accordionGroups: groups });
 
-    const { result } = await mountHook(2);
+    const { result } = await mountHook();
 
     await act(async () => {
       await result.current.moveItem("g1", 0, "g2", 0);
@@ -181,7 +221,7 @@ describe("useAccordions — moveItem", () => {
     const groups = [makeGroup({ id: "g1", name: "Work", items: [slot] })];
     seedStorage("local", { accordionGroups: groups });
 
-    const { result } = await mountHook(1);
+    const { result } = await mountHook();
     const setCallsBefore = (chrome.storage.local.set as ReturnType<typeof import("vitest").vi.fn>)
       .mock.calls.length;
 
@@ -199,7 +239,7 @@ describe("useAccordions — moveItem", () => {
     const groups = [makeGroup({ id: "g1", name: "Work", items: [slot] })];
     seedStorage("local", { accordionGroups: groups });
 
-    const { result } = await mountHook(1);
+    const { result } = await mountHook();
 
     await act(async () => {
       await result.current.moveItem("g1", 0, "nonexistent", 0);
@@ -215,7 +255,7 @@ describe("useAccordions — renameGroup", () => {
     const groups = [makeGroup({ id: "g1", name: "Old" })];
     seedStorage("local", { accordionGroups: groups });
 
-    const { result } = await mountHook(1);
+    const { result } = await mountHook();
 
     await act(async () => {
       await result.current.renameGroup("g1", "  New Name  ");
@@ -228,7 +268,7 @@ describe("useAccordions — renameGroup", () => {
     const groups = [makeGroup({ id: "g1", name: "Work" })];
     seedStorage("local", { accordionGroups: groups });
 
-    const { result } = await mountHook(1);
+    const { result } = await mountHook();
 
     await act(async () => {
       await result.current.renameGroup("g1", "   ");
@@ -243,7 +283,7 @@ describe("useAccordions — toggleCollapse", () => {
     const groups = [makeGroup({ id: "g1", name: "Work", collapsed: false })];
     seedStorage("local", { accordionGroups: groups });
 
-    const { result } = await mountHook(1);
+    const { result } = await mountHook();
 
     await act(async () => {
       await result.current.toggleCollapse("g1");
@@ -265,7 +305,7 @@ describe("useAccordions — swapGroups", () => {
     ];
     seedStorage("local", { accordionGroups: groups });
 
-    const { result } = await mountHook(2);
+    const { result } = await mountHook();
 
     await act(async () => {
       await result.current.swapGroups(0, 1);
@@ -279,7 +319,7 @@ describe("useAccordions — swapGroups", () => {
     const groups = [makeGroup({ id: "g1", name: "Work" })];
     seedStorage("local", { accordionGroups: groups });
 
-    const { result } = await mountHook(1);
+    const { result } = await mountHook();
     const setCallsBefore = (chrome.storage.local.set as ReturnType<typeof import("vitest").vi.fn>)
       .mock.calls.length;
 
@@ -302,7 +342,7 @@ describe("useAccordions — deleteGroup", () => {
     ];
     seedStorage("local", { accordionGroups: groups });
 
-    const { result } = await mountHook(2);
+    const { result } = await mountHook();
 
     await act(async () => {
       await result.current.deleteGroup("g1");
@@ -310,42 +350,5 @@ describe("useAccordions — deleteGroup", () => {
 
     expect(result.current.groups).toHaveLength(1);
     expect(result.current.groups[0].id).toBe("g2");
-  });
-});
-
-describe("useAccordions — cross-tab sync", () => {
-  it("updates state when chrome.storage.onChanged fires for local area", async () => {
-    const { result } = await mountHook(3);
-
-    const updatedGroups = [makeGroup({ id: "ext-g1", name: "From Other Tab" })];
-
-    act(() => {
-      fireStorageChange("local", {
-        accordionGroups: { newValue: updatedGroups },
-      });
-    });
-
-    expect(result.current.groups).toHaveLength(1);
-    expect(result.current.groups[0].name).toBe("From Other Tab");
-  });
-
-  it("ignores onChanged events for non-local areas", async () => {
-    const { result } = await mountHook(3);
-    const originalLength = result.current.groups.length;
-
-    act(() => {
-      // sync area — should be ignored by useAccordions
-      fireStorageChange("sync", {
-        accordionGroups: { newValue: [makeGroup({ id: "x", name: "Should be ignored" })] },
-      });
-    });
-
-    expect(result.current.groups).toHaveLength(originalLength);
-  });
-
-  it("removes the onChanged listener on unmount", async () => {
-    const { unmount } = await mountHook(3);
-    unmount();
-    expect(chrome.storage.onChanged.removeListener).toHaveBeenCalledTimes(1);
   });
 });

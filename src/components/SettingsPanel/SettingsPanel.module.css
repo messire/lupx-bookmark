@@ -389,3 +389,54 @@
   font-size: 11px;
   opacity: 0.5;
 }
+
+/* ── Group list in Layout section ── */
+
+.groupRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0 4px 4px;
+  border-radius: 6px;
+}
+
+.groupRow:hover {
+  background: var(--color-card-hover);
+}
+
+.groupRowName {
+  font-size: 13px;
+  opacity: 0.85;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.groupDeleteBtn {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--color-subtle);
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+.groupDeleteBtn:hover:not(:disabled) {
+  color: #e05555;
+  background: rgba(224, 85, 85, 0.12);
+}
+
+.groupDeleteBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}

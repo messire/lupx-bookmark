@@ -32,6 +32,17 @@ export default tseslint.config(
       // Non-null assertions are used intentionally in several places
       // (Chrome storage results, DOM refs). Keep as warn, not error.
       "@typescript-eslint/no-non-null-assertion": "warn",
+
+      // Allow intentionally-unused variables when prefixed with _.
+      // Common pattern: const { __version: _version, ...rest } = obj;
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          varsIgnorePattern: "^_",
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
     },
   },
 
