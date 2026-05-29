@@ -9,6 +9,9 @@ import { seedStorage } from "../test/setup";
 // In jsdom there is no real image loading, so we stub the global Image
 // constructor with a class that immediately fires onload/onerror based on
 // a registry keyed by URL pattern.
+//
+// The same probeRegistry also drives the fetch() mock for fetchChromeFavicon
+// (which fetches chrome://favicon2/ directly, bypassing probeImage).
 
 type ProbeResult = "hit" | "miss" | "error";
 
@@ -29,6 +32,41 @@ function clearProbes() {
 beforeEach(() => {
   clearProbes();
   imageConstructorCalls = 0;
+
+  // Mock fetch — fetchChromeFavicon calls fetch(chrome://favicon2/...).
+  // jsdom does not support the chrome:// protocol, so we intercept it here.
+  // Hit  → blob > 100 bytes  (fetchChromeFavicon converts to data URL and returns it)
+  // Miss → blob ≤ 100 bytes  (fetchChromeFavicon returns "" and falls through)
+  // Mock FileReader — fetchChromeFavicon uses FileReader.readAsDataURL to convert the blob.
+  // jsdom's FileReader does not fully implement readAsDataURL, so we stub it.
+  class MockFileReader {
+    result: string | null = null;
+    onloadend: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+
+    readAsDataURL(blob: Blob) {
+      Promise.resolve().then(() => {
+        // Return a stable data URL whose content encodes whether this was a hit.
+        // The actual base64 payload doesn't matter for these tests.
+        this.result = blob.size > 100 ? "data:image/png;base64,favicon2hit==" : null;
+        if (this.result) this.onloadend?.();
+        else this.onerror?.();
+      });
+    }
+  }
+  vi.stubGlobal("FileReader", MockFileReader);
+
+  vi.stubGlobal("fetch", async (url: string) => {
+    if (typeof url === "string" && url.includes("favicon2")) {
+      const isHit = Object.entries(probeRegistry).some(
+        ([pattern, r]) => url.includes(pattern) && r === "hit",
+      );
+      const size = isHit ? 200 : 10;
+      const blob = new Blob([new Uint8Array(size)]);
+      return { ok: true, blob: async () => blob } as unknown as Response;
+    }
+    return { ok: false } as unknown as Response;
+  });
 
   // Stub Image with a class so `new Image()` works correctly.
   class MockImage {
@@ -100,23 +138,11 @@ describe("useFaviconCache — probing", () => {
 
     await waitFor(() => result.current.getFavicon("https://example.com") !== undefined);
 
-    expect(result.current.getFavicon("https://example.com")).toContain("favicon2");
+    expect(result.current.getFavicon("https://example.com")).toMatch(/^data:/);
   });
 
-  it("falls back to DuckDuckGo when chrome favicon misses", async () => {
+  it("falls back to Google S2 when chrome favicon misses", async () => {
     mockProbe("favicon2", "miss");
-    mockProbe("duckduckgo.com", "hit");
-
-    const { result } = await mount(["https://example.com"]);
-
-    await waitFor(() => result.current.getFavicon("https://example.com") !== undefined);
-
-    expect(result.current.getFavicon("https://example.com")).toContain("duckduckgo.com");
-  });
-
-  it("falls back to Google S2 when chrome and DDG both miss", async () => {
-    mockProbe("favicon2", "miss");
-    mockProbe("duckduckgo.com", "miss");
     mockProbe("google.com/s2", "hit");
 
     const { result } = await mount(["https://example.com"]);
@@ -128,7 +154,6 @@ describe("useFaviconCache — probing", () => {
 
   it("stores empty string when all probes miss", async () => {
     mockProbe("favicon2", "miss");
-    mockProbe("duckduckgo.com", "miss");
     mockProbe("google.com/s2", "miss");
 
     const { result } = await mount(["https://nofavicon.example.com"]);

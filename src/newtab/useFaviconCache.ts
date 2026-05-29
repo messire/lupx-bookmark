@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { getFaviconUrl, getFaviconDDGUrl, getFaviconFallbackUrl } from "../utils/favicon";
+import { fetchChromeFavicon, getFaviconFallbackUrl } from "../utils/favicon";
 
 const CACHE_KEY = "faviconCache_v1";
 
@@ -30,15 +30,11 @@ function probeImage(src: string, timeoutMs = 5000): Promise<boolean> {
  * Returns "" if none work.
  */
 async function resolveUrl(bookmarkUrl: string): Promise<string> {
-  // 1. Chrome internal cache
-  const chromeUrl = getFaviconUrl(bookmarkUrl, 32);
-  if (await probeImage(chromeUrl)) return chromeUrl;
+  // 1. Chrome internal cache (fetch -> blob URL; chrome:// cannot be used as <img src>)
+  const chromeBlobUrl = await fetchChromeFavicon(bookmarkUrl, 32);
+  if (chromeBlobUrl) return chromeBlobUrl;
 
-  // 2. DuckDuckGo
-  const ddgUrl = getFaviconDDGUrl(bookmarkUrl);
-  if (ddgUrl && (await probeImage(ddgUrl))) return ddgUrl;
-
-  // 3. Google S2
+  // 2. Google S2
   const s2Url = getFaviconFallbackUrl(bookmarkUrl, 32);
   if (s2Url && (await probeImage(s2Url))) return s2Url;
 
@@ -63,7 +59,7 @@ function loadStoredCache(): Promise<FaviconCache> {
  * Returns getFavicon(url):
  *   undefined  - not yet resolved (caller should use live fallback chain)
  *   ""         - no favicon found
- *   "https://…" - the working favicon URL to use directly
+ *   "https://..." - the working favicon URL to use directly
  */
 export function useFaviconCache(bookmarkUrls: string[]): {
   getFavicon: (url: string) => string | undefined;

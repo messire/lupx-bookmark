@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import BookmarkCard from "../BookmarkCard/BookmarkCard";
-import { getFaviconUrl, getFaviconDDGUrl, getFaviconFallbackUrl } from "../../utils/favicon";
+import { getFaviconFallbackUrl } from "../../utils/favicon";
+import { useFaviconContext } from "../../newtab/FaviconCacheContext";
 import type { AccordionGroup as AccordionGroupType, CardStyle, SpeedDialSlot } from "../../types";
 import { MAX_ITEMS_PER_ACCORDION } from "../../types";
 import styles from "./AccordionGroup.module.css";
@@ -126,7 +127,7 @@ export default function AccordionGroup({
 
   const filledItems = group.items;
   const showAddCard = filledItems.length < MAX_ITEMS_PER_ACCORDION;
-  const gridCols = `repeat(${itemsPerRow}, ${cardWidth}px)`;
+  const gridCols = "repeat(" + itemsPerRow + ", " + cardWidth + "px)";
 
   const groupClass = [
     styles.accordion,
@@ -265,26 +266,23 @@ export default function AccordionGroup({
 
 // -- Mini favicon (16x16) for collapsed state --
 
-type MiniStage = "chrome" | "ddg" | "google" | "pin";
+type MiniStage = "google" | "pin";
 
 function MiniIcon({ item }: { item: FilledSlot }) {
-  const [stage, setStage] = useState<MiniStage>("chrome");
+  const getFavicon = useFaviconContext();
+  const [stage, setStage] = useState<MiniStage>("google");
+
+  const cached = getFavicon(item.url); // undefined=probing, ""=none, "url"=use it
 
   function getSrc(): string {
-    if (stage === "chrome") return getFaviconUrl(item.url, 16);
-    if (stage === "ddg") return getFaviconDDGUrl(item.url) || PIN_ICON;
+    if (cached !== undefined) return cached || PIN_ICON;
     if (stage === "google") return getFaviconFallbackUrl(item.url, 16) || PIN_ICON;
     return PIN_ICON;
   }
 
-  function handleLoad(e: React.SyntheticEvent<HTMLImageElement>) {
-    if (stage === "chrome" && e.currentTarget.naturalWidth <= 1) setStage("ddg");
-  }
-
   function handleError() {
-    if (stage === "chrome") setStage("ddg");
-    else if (stage === "ddg") setStage("google");
-    else if (stage === "google") setStage("pin");
+    if (cached !== undefined) return;
+    if (stage === "google") setStage("pin");
   }
 
   return (
@@ -303,7 +301,6 @@ function MiniIcon({ item }: { item: FilledSlot }) {
         width={16}
         height={16}
         className={styles.miniIconImg}
-        onLoad={handleLoad}
         onError={handleError}
       />
     </a>

@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { getFaviconUrl, getFaviconDDGUrl, getFaviconFallbackUrl } from "../../utils/favicon";
+import { getFaviconFallbackUrl } from "../../utils/favicon";
 import { useFaviconContext } from "../../newtab/FaviconCacheContext";
 import type { SpeedDialSlot, CardStyle } from "../../types";
 import styles from "./BookmarkCard.module.css";
@@ -18,12 +18,11 @@ const STYLE_CLASS: Record<CardStyle, string> = {
   aurora: styles.styleAurora,
 };
 
-// Live fallback chain (used when favicon is not yet in cache):
-//   1. chrome://favicon2/ - Chrome internal cache; returns 1x1 transparent when empty
-//   2. DuckDuckGo          - broad coverage including niche/regional sites
-//   3. Google S2           - widely known fallback
-//   4. pin.svg             - final fallback
-type FaviconStage = "chrome" | "ddg" | "google" | "pin";
+// Live fallback chain (used while cache is being populated):
+// chrome://favicon2/ is handled via fetch() in useFaviconCache -- NOT usable as <img src>
+//   1. Google S2  - widely known fallback
+//   2. pin.svg    - final fallback
+type FaviconStage = "google" | "pin";
 
 interface BookmarkCardProps {
   slot: SpeedDialSlot;
@@ -52,20 +51,20 @@ export default function BookmarkCard({
 }: BookmarkCardProps) {
   const getFavicon = useFaviconContext();
 
-  const [faviconStage, setFaviconStage] = useState<FaviconStage>("chrome");
+  const [faviconStage, setFaviconStage] = useState<FaviconStage>("google");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const styleClass = STYLE_CLASS[cardStyle];
-  const dragClass = isDragOver ? ` ${styles.dragOver}` : "";
+  const dragClass = isDragOver ? " " + styles.dragOver : "";
 
   // Empty slot
   if (!slot.url) {
     return (
       <button
-        className={`${styles.emptyCard} ${styleClass}${dragClass}`}
+        className={styles.emptyCard + " " + styleClass + dragClass}
         onClick={onClick}
         title="Add bookmark"
         onDragOver={onDragOver}
@@ -81,33 +80,21 @@ export default function BookmarkCard({
   const cachedFavicon = getFavicon(url); // undefined=probing, ""=none, "url"=use it
 
   function getIconSrc(): string {
-    // If cache has a confirmed working URL, use it directly
     if (cachedFavicon !== undefined) {
       return cachedFavicon || PIN_ICON;
     }
-    // Cache not yet populated: use the live fallback chain
-    if (faviconStage === "chrome") return getFaviconUrl(url, 64);
-    if (faviconStage === "ddg") return getFaviconDDGUrl(url) || PIN_ICON;
+    // Cache not yet populated: Google S2 -> pin
     if (faviconStage === "google") return getFaviconFallbackUrl(url, 64) || PIN_ICON;
     return PIN_ICON;
   }
 
-  // chrome://favicon2/ returns a 1x1 transparent pixel when not cached
-  function handleImgLoad(e: React.SyntheticEvent<HTMLImageElement>) {
-    if (
-      cachedFavicon === undefined &&
-      faviconStage === "chrome" &&
-      e.currentTarget.naturalWidth <= 1
-    ) {
-      setFaviconStage("ddg");
-    }
+  function handleImgLoad(_e: React.SyntheticEvent<HTMLImageElement>) {
+    // No-op: Google S2 returns proper icons or triggers onError
   }
 
   function handleImgError() {
-    if (cachedFavicon !== undefined) return; // cached result, no chain to advance
-    if (faviconStage === "chrome") setFaviconStage("ddg");
-    else if (faviconStage === "ddg") setFaviconStage("google");
-    else if (faviconStage === "google") setFaviconStage("pin");
+    if (cachedFavicon !== undefined) return;
+    if (faviconStage === "google") setFaviconStage("pin");
   }
 
   function handleClick(e: React.MouseEvent) {
@@ -115,8 +102,6 @@ export default function BookmarkCard({
     e.preventDefault();
     window.location.href = url;
   }
-
-  // -- Delete --
 
   function handleDeleteClick(e: React.MouseEvent) {
     e.preventDefault();
@@ -135,8 +120,6 @@ export default function BookmarkCard({
     e.stopPropagation();
     setConfirmDelete(false);
   }
-
-  // -- Rename --
 
   function handleEditClick(e: React.MouseEvent) {
     e.preventDefault();
@@ -163,14 +146,15 @@ export default function BookmarkCard({
     }
   }
 
-  // -- Render --
-
   const isInteracting = confirmDelete || editing;
+  const confirmingClass = confirmDelete ? " " + styles.confirming : "";
+  const editingClass = editing ? " " + styles.editing : "";
+  const cardClassName = styles.card + " " + styleClass + dragClass + confirmingClass + editingClass;
 
   return (
     <a
       href={slot.url}
-      className={`${styles.card} ${styleClass}${dragClass}${confirmDelete ? ` ${styles.confirming}` : ""}${editing ? ` ${styles.editing}` : ""}`}
+      className={cardClassName}
       title={isInteracting ? undefined : (slot.title ?? slot.url)}
       onClick={handleClick}
       draggable={!isInteracting}
@@ -183,14 +167,14 @@ export default function BookmarkCard({
           <span className={styles.confirmLabel}>Remove?</span>
           <div className={styles.confirmActions}>
             <button
-              className={`${styles.confirmBtn} ${styles.confirmYes}`}
+              className={styles.confirmBtn + " " + styles.confirmYes}
               onClick={handleConfirmDelete}
               title="Yes, remove"
             >
               &#10003;
             </button>
             <button
-              className={`${styles.confirmBtn} ${styles.confirmNo}`}
+              className={styles.confirmBtn + " " + styles.confirmNo}
               onClick={handleCancelDelete}
               title="Cancel"
             >

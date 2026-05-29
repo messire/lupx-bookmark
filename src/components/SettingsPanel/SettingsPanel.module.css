@@ -17,7 +17,7 @@
   top: 0;
   right: 0;
   height: 100%;
-  width: 300px;
+  /* width is set via inline style; default defined in component */
   background: var(--color-card-bg);
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
   z-index: 51;
@@ -29,6 +29,35 @@
 
 .panelOpen {
   transform: translateX(0);
+}
+
+/* ── Resize handle ───────────────────────────────────────────────────── */
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 10;
+}
+
+.resizeHandle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 40px;
+  border-radius: 2px;
+  background: var(--color-border);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.resizeHandle:hover::after {
+  opacity: 1;
 }
 
 .header {
