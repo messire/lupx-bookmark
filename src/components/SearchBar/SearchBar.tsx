@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import type { CardStyle, SearchEngine } from "../../types";
-import { getFaviconUrl, getFaviconDDGUrl } from "../../utils/favicon";
+import { getFaviconDDGUrl } from "../../utils/favicon";
 import styles from "./SearchBar.module.css";
 
 interface SearchBarProps {
@@ -21,19 +21,19 @@ const ENGINES: EngineConfig[] = [
     value: "google",
     name: "Google",
     homeUrl: "https://www.google.com",
-    buildUrl: (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}`,
+    buildUrl: (q) => "https://www.google.com/search?q=" + encodeURIComponent(q),
   },
   {
     value: "yandex",
     name: "Yandex",
     homeUrl: "https://www.yandex.com",
-    buildUrl: (q) => `https://yandex.com/search/?text=${encodeURIComponent(q)}`,
+    buildUrl: (q) => "https://yandex.com/search/?text=" + encodeURIComponent(q),
   },
   {
     value: "duckduckgo",
     name: "DuckDuckGo",
     homeUrl: "https://duckduckgo.com",
-    buildUrl: (q) => `https://duckduckgo.com/?q=${encodeURIComponent(q)}`,
+    buildUrl: (q) => "https://duckduckgo.com/?q=" + encodeURIComponent(q),
   },
 ];
 
@@ -59,8 +59,8 @@ export default function SearchBar({ engine, onEngineChange, cardStyle }: SearchB
   }
 
   return (
-    <div className={`${styles.bar}${neonClass ? ` ${neonClass}` : ""}`}>
-      {/* Engine selector — icon buttons */}
+    <div className={styles.bar + (neonClass ? " " + neonClass : "")}>
+      {/* Engine selector -- icon buttons */}
       <div className={styles.engineGroup} role="group" aria-label="Search engine">
         {ENGINES.map((e) => (
           <EngineButton
@@ -80,7 +80,7 @@ export default function SearchBar({ engine, onEngineChange, cardStyle }: SearchB
         ref={inputRef}
         className={styles.input}
         type="text"
-        placeholder="Search…"
+        placeholder="Search..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -97,10 +97,10 @@ export default function SearchBar({ engine, onEngineChange, cardStyle }: SearchB
   );
 }
 
-// ── Single engine icon button ─────────────────────────────────────────────
+// -- Single engine icon button --
 
-// Fallback chain: chrome favicon → DDG → letter
-type FaviconStage = "chrome" | "ddg" | "letter";
+// Fallback chain: DDG -> letter
+type FaviconStage = "ddg" | "letter";
 
 function EngineButton({
   config,
@@ -111,22 +111,17 @@ function EngineButton({
   active: boolean;
   onClick: () => void;
 }) {
-  const [stage, setStage] = useState<FaviconStage>("chrome");
+  const [stage, setStage] = useState<FaviconStage>("ddg");
 
-  const iconUrl =
-    stage === "chrome"
-      ? getFaviconUrl(config.homeUrl, 32)
-      : stage === "ddg"
-        ? getFaviconDDGUrl(config.homeUrl)
-        : "";
+  const iconUrl = stage === "ddg" ? getFaviconDDGUrl(config.homeUrl) : "";
 
   function handleError() {
-    setStage((prev) => (prev === "chrome" ? "ddg" : "letter"));
+    setStage("letter");
   }
 
   return (
     <button
-      className={`${styles.engineBtn} ${active ? styles.engineActive : ""}`}
+      className={styles.engineBtn + (active ? " " + styles.engineActive : "")}
       onClick={onClick}
       title={config.name}
       aria-pressed={active}

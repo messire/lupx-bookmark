@@ -3,7 +3,7 @@ import type { Background } from "../types";
 
 export const BG_IMAGE_STORAGE_KEY = "backgroundImage";
 
-// ── Luminance helpers ──────────────────────────────────────────────────────
+// -- Luminance helpers --
 
 function hexToLinear(channel: number): number {
   const c = channel / 255;
@@ -26,21 +26,21 @@ function getBgAttribute(background: Background): BgAttribute {
     case "color":
       return hexLuminance(background.color) > 0.4 ? "light" : "dark";
     case "gradient":
-      return "image"; // treat like image — use white text + shadow, works on any gradient
+      return "image"; // treat like image -- use white text + shadow, works on any gradient
     case "image":
       return "image";
   }
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────────
+// -- Hook --
 
 /**
  * Applies the background to document.body and sets data-bg on <html>
  * so CSS can adapt text colours automatically:
- *   data-bg="dark"  → white text
- *   data-bg="light" → dark text
- *   data-bg="image" → white text + text-shadow (works on any image)
- *   data-bg="none"  → theme default
+ *   data-bg="dark"  -> white text
+ *   data-bg="light" -> dark text
+ *   data-bg="image" -> white text + text-shadow (works on any image)
+ *   data-bg="none"  -> theme default
  */
 export function useBackground(background: Background) {
   const [localImageData, setLocalImageData] = useState<string | null>(null);
@@ -84,14 +84,14 @@ export function useBackground(background: Background) {
         break;
       case "gradient": {
         const { from, to, angle } = background.gradient;
-        body.style.backgroundImage = `linear-gradient(${angle}deg, ${from}, ${to})`;
+        body.style.backgroundImage = "linear-gradient(" + angle + "deg, " + from + ", " + to + ")";
         body.style.backgroundAttachment = "fixed";
         break;
       }
       case "image": {
         const src = background.imageUrl || localImageData;
         if (src) {
-          body.style.backgroundImage = `url(${JSON.stringify(src)})`;
+          body.style.backgroundImage = "url(" + JSON.stringify(src) + ")";
           body.style.backgroundSize = "cover";
           body.style.backgroundPosition = "center";
           body.style.backgroundRepeat = "no-repeat";
