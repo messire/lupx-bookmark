@@ -5,7 +5,7 @@ import type { Background } from "../types";
 import { DEFAULT_BACKGROUND } from "../types";
 import { seedStorage, fireStorageChange } from "../test/setup";
 
-// ── Helpers ───────────────────────────────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────────────────────────────
 
 function bg(overrides: Partial<Background> = {}): Background {
   return { ...DEFAULT_BACKGROUND, ...overrides };
@@ -19,7 +19,7 @@ function rgb(hex: string): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────
+// ── Tests ───────────────────────────────────────────────────────────────────────────────
 
 describe("useBackground — type: none", () => {
   it("sets data-bg to 'none' and leaves body styles empty", async () => {

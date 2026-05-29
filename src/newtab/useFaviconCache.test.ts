@@ -103,20 +103,8 @@ describe("useFaviconCache — probing", () => {
     expect(result.current.getFavicon("https://example.com")).toContain("favicon2");
   });
 
-  it("falls back to DuckDuckGo when chrome favicon misses", async () => {
+  it("falls back to Google S2 when chrome favicon misses", async () => {
     mockProbe("favicon2", "miss");
-    mockProbe("duckduckgo.com", "hit");
-
-    const { result } = await mount(["https://example.com"]);
-
-    await waitFor(() => result.current.getFavicon("https://example.com") !== undefined);
-
-    expect(result.current.getFavicon("https://example.com")).toContain("duckduckgo.com");
-  });
-
-  it("falls back to Google S2 when chrome and DDG both miss", async () => {
-    mockProbe("favicon2", "miss");
-    mockProbe("duckduckgo.com", "miss");
     mockProbe("google.com/s2", "hit");
 
     const { result } = await mount(["https://example.com"]);
@@ -128,7 +116,6 @@ describe("useFaviconCache — probing", () => {
 
   it("stores empty string when all probes miss", async () => {
     mockProbe("favicon2", "miss");
-    mockProbe("duckduckgo.com", "miss");
     mockProbe("google.com/s2", "miss");
 
     const { result } = await mount(["https://nofavicon.example.com"]);

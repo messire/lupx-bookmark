@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { fetchChromeFavicon, getFaviconDDGUrl, getFaviconFallbackUrl } from "../utils/favicon";
+import { fetchChromeFavicon, getFaviconFallbackUrl } from "../utils/favicon";
 
 const CACHE_KEY = "faviconCache_v1";
 
@@ -34,11 +34,7 @@ async function resolveUrl(bookmarkUrl: string): Promise<string> {
   const chromeBlobUrl = await fetchChromeFavicon(bookmarkUrl, 32);
   if (chromeBlobUrl) return chromeBlobUrl;
 
-  // 2. DuckDuckGo
-  const ddgUrl = getFaviconDDGUrl(bookmarkUrl);
-  if (ddgUrl && (await probeImage(ddgUrl))) return ddgUrl;
-
-  // 3. Google S2
+  // 2. Google S2
   const s2Url = getFaviconFallbackUrl(bookmarkUrl, 32);
   if (s2Url && (await probeImage(s2Url))) return s2Url;
 

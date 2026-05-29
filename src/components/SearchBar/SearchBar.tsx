@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import type { CardStyle, SearchEngine } from "../../types";
-import { getFaviconDDGUrl } from "../../utils/favicon";
+import { getFaviconFallbackUrl } from "../../utils/favicon";
 import styles from "./SearchBar.module.css";
 
 interface SearchBarProps {
@@ -99,8 +99,8 @@ export default function SearchBar({ engine, onEngineChange, cardStyle }: SearchB
 
 // -- Single engine icon button --
 
-// Fallback chain: DDG -> letter
-type FaviconStage = "ddg" | "letter";
+// Fallback chain: Google S2 -> letter
+type FaviconStage = "google" | "letter";
 
 function EngineButton({
   config,
@@ -111,9 +111,9 @@ function EngineButton({
   active: boolean;
   onClick: () => void;
 }) {
-  const [stage, setStage] = useState<FaviconStage>("ddg");
+  const [stage, setStage] = useState<FaviconStage>("google");
 
-  const iconUrl = stage === "ddg" ? getFaviconDDGUrl(config.homeUrl) : "";
+  const iconUrl = stage === "google" ? getFaviconFallbackUrl(config.homeUrl, 32) : "";
 
   function handleError() {
     setStage("letter");

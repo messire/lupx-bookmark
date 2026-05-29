@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import BookmarkCard from "../BookmarkCard/BookmarkCard";
-import { getFaviconDDGUrl, getFaviconFallbackUrl } from "../../utils/favicon";
+import { getFaviconFallbackUrl } from "../../utils/favicon";
 import type { AccordionGroup as AccordionGroupType, CardStyle, SpeedDialSlot } from "../../types";
 import { MAX_ITEMS_PER_ACCORDION } from "../../types";
 import styles from "./AccordionGroup.module.css";
@@ -265,24 +265,22 @@ export default function AccordionGroup({
 
 // -- Mini favicon (16x16) for collapsed state --
 
-type MiniStage = "ddg" | "google" | "pin";
+type MiniStage = "google" | "pin";
 
 function MiniIcon({ item }: { item: FilledSlot }) {
-  const [stage, setStage] = useState<MiniStage>("ddg");
+  const [stage, setStage] = useState<MiniStage>("google");
 
   function getSrc(): string {
-    if (stage === "ddg") return getFaviconDDGUrl(item.url) || PIN_ICON;
     if (stage === "google") return getFaviconFallbackUrl(item.url, 16) || PIN_ICON;
     return PIN_ICON;
   }
 
   function handleLoad(_e: React.SyntheticEvent<HTMLImageElement>) {
-    // No-op: DDG/Google return proper icons or trigger onError
+    // No-op: Google S2 returns proper icons or triggers onError
   }
 
   function handleError() {
-    if (stage === "ddg") setStage("google");
-    else if (stage === "google") setStage("pin");
+    if (stage === "google") setStage("pin");
   }
 
   return (

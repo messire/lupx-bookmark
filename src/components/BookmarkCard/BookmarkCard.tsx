@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { getFaviconDDGUrl, getFaviconFallbackUrl } from "../../utils/favicon";
+import { getFaviconFallbackUrl } from "../../utils/favicon";
 import { useFaviconContext } from "../../newtab/FaviconCacheContext";
 import type { SpeedDialSlot, CardStyle } from "../../types";
 import styles from "./BookmarkCard.module.css";
@@ -20,10 +20,9 @@ const STYLE_CLASS: Record<CardStyle, string> = {
 
 // Live fallback chain (used while cache is being populated):
 // chrome://favicon2/ is handled via fetch() in useFaviconCache -- NOT usable as <img src>
-//   1. DuckDuckGo - broad coverage including niche/regional sites
-//   2. Google S2  - widely known fallback
-//   3. pin.svg    - final fallback
-type FaviconStage = "ddg" | "google" | "pin";
+//   1. Google S2  - widely known fallback
+//   2. pin.svg    - final fallback
+type FaviconStage = "google" | "pin";
 
 interface BookmarkCardProps {
   slot: SpeedDialSlot;
@@ -52,7 +51,7 @@ export default function BookmarkCard({
 }: BookmarkCardProps) {
   const getFavicon = useFaviconContext();
 
-  const [faviconStage, setFaviconStage] = useState<FaviconStage>("ddg");
+  const [faviconStage, setFaviconStage] = useState<FaviconStage>("google");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -84,20 +83,18 @@ export default function BookmarkCard({
     if (cachedFavicon !== undefined) {
       return cachedFavicon || PIN_ICON;
     }
-    // Cache not yet populated: DDG -> Google S2 -> pin
-    if (faviconStage === "ddg") return getFaviconDDGUrl(url) || PIN_ICON;
+    // Cache not yet populated: Google S2 -> pin
     if (faviconStage === "google") return getFaviconFallbackUrl(url, 64) || PIN_ICON;
     return PIN_ICON;
   }
 
   function handleImgLoad(_e: React.SyntheticEvent<HTMLImageElement>) {
-    // No-op: chrome://favicon2/ 1x1 probe removed; DDG/Google return proper icons or error
+    // No-op: Google S2 returns proper icons or triggers onError
   }
 
   function handleImgError() {
     if (cachedFavicon !== undefined) return;
-    if (faviconStage === "ddg") setFaviconStage("google");
-    else if (faviconStage === "google") setFaviconStage("pin");
+    if (faviconStage === "google") setFaviconStage("pin");
   }
 
   function handleClick(e: React.MouseEvent) {

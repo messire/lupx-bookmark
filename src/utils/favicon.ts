@@ -3,9 +3,8 @@
  *
  * Chain used in BookmarkCard / MiniIcon:
  *   1. chrome://favicon2/  - Chrome internal cache (fast, works offline)
- *   2. DuckDuckGo           - broad coverage, works for niche/regional sites
- *   3. Google S2            - widely used fallback
- *   4. pin.svg              - final fallback
+ *   2. Google S2            - widely used fallback
+ *   3. pin.svg              - final fallback
  */
 
 /**
@@ -38,17 +37,7 @@ export async function fetchChromeFavicon(
   }
 }
 
-/** Second: DuckDuckGo favicon service. Good coverage for niche and regional sites. */
-export function getFaviconDDGUrl(pageUrl: string): string {
-  try {
-    const hostname = new URL(pageUrl).hostname;
-    return "https://icons.duckduckgo.com/ip3/" + hostname + ".ico";
-  } catch {
-    return "";
-  }
-}
-
-/** Third: Google S2 favicon service. */
+/** Second: Google S2 favicon service. */
 export function getFaviconFallbackUrl(pageUrl: string, size: 16 | 32 | 64 = 32): string {
   try {
     const origin = new URL(pageUrl).origin;
