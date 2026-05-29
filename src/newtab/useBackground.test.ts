@@ -92,6 +92,7 @@ describe("useBackground — type: image (external URL)", () => {
     expect(document.body.style.backgroundSize).toBe("cover");
     expect(document.body.style.backgroundPosition).toContain("center");
     expect(document.body.style.backgroundRepeat).toBe("no-repeat");
+    expect(document.body.style.backgroundAttachment).toBe("fixed");
   });
 
   it("sets data-bg to 'image'", async () => {
