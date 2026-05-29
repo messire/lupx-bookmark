@@ -9,6 +9,9 @@ import { seedStorage } from "../test/setup";
 // In jsdom there is no real image loading, so we stub the global Image
 // constructor with a class that immediately fires onload/onerror based on
 // a registry keyed by URL pattern.
+//
+// The same probeRegistry also drives the fetch() mock for fetchChromeFavicon
+// (which fetches chrome://favicon2/ directly, bypassing probeImage).
 
 type ProbeResult = "hit" | "miss" | "error";
 
@@ -29,6 +32,26 @@ function clearProbes() {
 beforeEach(() => {
   clearProbes();
   imageConstructorCalls = 0;
+
+  // Mock URL.createObjectURL — fetchChromeFavicon calls this when it gets a real icon blob.
+  // Return a stable URL containing "favicon2" so tests can assert the chrome cache was used.
+  vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:favicon2-cached");
+
+  // Mock fetch — fetchChromeFavicon calls fetch(chrome://favicon2/...).
+  // jsdom does not support the chrome:// protocol, so we intercept it here.
+  // Hit  → blob > 100 bytes  (fetchChromeFavicon returns a blob URL)
+  // Miss → blob ≤ 100 bytes  (fetchChromeFavicon returns "" and falls through)
+  vi.stubGlobal("fetch", async (url: string) => {
+    if (typeof url === "string" && url.includes("favicon2")) {
+      const isHit = Object.entries(probeRegistry).some(
+        ([pattern, r]) => url.includes(pattern) && r === "hit",
+      );
+      const size = isHit ? 200 : 10;
+      const blob = new Blob([new Uint8Array(size)]);
+      return { ok: true, blob: async () => blob } as unknown as Response;
+    }
+    return { ok: false } as unknown as Response;
+  });
 
   // Stub Image with a class so `new Image()` works correctly.
   class MockImage {
