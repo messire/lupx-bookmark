@@ -76,6 +76,7 @@ export function useBackground(background: Background) {
     body.style.backgroundSize = "";
     body.style.backgroundPosition = "";
     body.style.backgroundRepeat = "";
+    body.style.backgroundAttachment = "";
 
     switch (background.type) {
       case "color":
@@ -84,6 +85,7 @@ export function useBackground(background: Background) {
       case "gradient": {
         const { from, to, angle } = background.gradient;
         body.style.backgroundImage = `linear-gradient(${angle}deg, ${from}, ${to})`;
+        body.style.backgroundAttachment = "fixed";
         break;
       }
       case "image": {
@@ -93,6 +95,7 @@ export function useBackground(background: Background) {
           body.style.backgroundSize = "cover";
           body.style.backgroundPosition = "center";
           body.style.backgroundRepeat = "no-repeat";
+          body.style.backgroundAttachment = "fixed";
         }
         break;
       }
