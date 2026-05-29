@@ -33,14 +33,29 @@ beforeEach(() => {
   clearProbes();
   imageConstructorCalls = 0;
 
-  // Mock URL.createObjectURL — fetchChromeFavicon calls this when it gets a real icon blob.
-  // Return a stable URL containing "favicon2" so tests can assert the chrome cache was used.
-  vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:favicon2-cached");
-
   // Mock fetch — fetchChromeFavicon calls fetch(chrome://favicon2/...).
   // jsdom does not support the chrome:// protocol, so we intercept it here.
-  // Hit  → blob > 100 bytes  (fetchChromeFavicon returns a blob URL)
+  // Hit  → blob > 100 bytes  (fetchChromeFavicon converts to data URL and returns it)
   // Miss → blob ≤ 100 bytes  (fetchChromeFavicon returns "" and falls through)
+  // Mock FileReader — fetchChromeFavicon uses FileReader.readAsDataURL to convert the blob.
+  // jsdom's FileReader does not fully implement readAsDataURL, so we stub it.
+  class MockFileReader {
+    result: string | null = null;
+    onloadend: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+
+    readAsDataURL(blob: Blob) {
+      Promise.resolve().then(() => {
+        // Return a stable data URL whose content encodes whether this was a hit.
+        // The actual base64 payload doesn't matter for these tests.
+        this.result = blob.size > 100 ? "data:image/png;base64,favicon2hit==" : null;
+        if (this.result) this.onloadend?.();
+        else this.onerror?.();
+      });
+    }
+  }
+  vi.stubGlobal("FileReader", MockFileReader);
+
   vi.stubGlobal("fetch", async (url: string) => {
     if (typeof url === "string" && url.includes("favicon2")) {
       const isHit = Object.entries(probeRegistry).some(
@@ -123,7 +138,7 @@ describe("useFaviconCache — probing", () => {
 
     await waitFor(() => result.current.getFavicon("https://example.com") !== undefined);
 
-    expect(result.current.getFavicon("https://example.com")).toContain("favicon2");
+    expect(result.current.getFavicon("https://example.com")).toMatch(/^data:/);
   });
 
   it("falls back to Google S2 when chrome favicon misses", async () => {

@@ -8,9 +8,12 @@
  */
 
 /**
- * Primary: Chrome internal favicon cache via fetch() -> blob URL.
+ * Primary: Chrome internal favicon cache via fetch() -> data URL.
  * Requires "favicon" permission. Must NOT be used as <img src> directly --
  * Chrome blocks chrome:// URLs in image loading; only fetch() is allowed.
+ *
+ * Returns a base64 data URL so the result is safe to persist in
+ * chrome.storage.local across page reloads (blob: URLs die with the document).
  * Returns "" if not cached or on error.
  */
 export async function fetchChromeFavicon(
@@ -31,10 +34,20 @@ export async function fetchChromeFavicon(
     const blob = await response.blob();
     // Chrome returns a 1x1 transparent PNG (~68 bytes) when the icon is not cached
     if (blob.size <= 100) return "";
-    return URL.createObjectURL(blob);
+    return await blobToDataUrl(blob);
   } catch {
     return "";
   }
+}
+
+/** Convert a Blob to a base64 data URL via FileReader. */
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(blob);
+  });
 }
 
 /** Second: Google S2 favicon service. */
