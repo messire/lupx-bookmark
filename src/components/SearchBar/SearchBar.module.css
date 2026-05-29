@@ -11,7 +11,7 @@
   background: var(--color-card-bg);
   color: var(--color-text);
   overflow: hidden;
-  padding: 0 6px 0 10px;
+  padding: 0 13px 0 10px;
   transition:
     border-color 0.18s ease,
     box-shadow 0.18s ease,
@@ -182,69 +182,4 @@
 
 :root[data-bg="light"] .engineActive {
   box-shadow: inset 0 0 0 1.5px #4f6ef7;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   Neon variants — breathing border + glow
-   ══════════════════════════════════════════════════════════════════════ */
-
-@keyframes neonBreathBar {
-  0%,
-  100% {
-    border-color: color-mix(in srgb, var(--neon-accent) 40%, transparent);
-    box-shadow:
-      0 0 4px color-mix(in srgb, var(--neon-accent) 30%, transparent),
-      0 0 10px color-mix(in srgb, var(--neon-accent) 14%, transparent);
-  }
-  50% {
-    border-color: color-mix(in srgb, var(--neon-accent) 80%, transparent);
-    box-shadow:
-      0 0 8px color-mix(in srgb, var(--neon-accent) 58%, transparent),
-      0 0 20px color-mix(in srgb, var(--neon-accent) 28%, transparent),
-      0 0 36px color-mix(in srgb, var(--neon-accent) 11%, transparent);
-  }
-}
-
-.barNeonPink {
-  --neon-accent: #ff2070;
-}
-.barNeonCyan {
-  --neon-accent: #00e5ff;
-}
-
-.barNeonPink,
-.barNeonCyan {
-  background: rgba(6, 6, 14, 0.92);
-  color: #ccd4ff;
-  animation: neonBreathBar 3s ease-in-out infinite;
-}
-
-.barNeonPink:focus-within,
-.barNeonCyan:focus-within {
-  animation-play-state: paused;
-  border-color: var(--neon-accent);
-  box-shadow:
-    0 0 8px color-mix(in srgb, var(--neon-accent) 65%, transparent),
-    0 0 20px color-mix(in srgb, var(--neon-accent) 32%, transparent),
-    0 0 40px color-mix(in srgb, var(--neon-accent) 14%, transparent);
-}
-
-.barNeonPink .engineGroup,
-.barNeonCyan .engineGroup {
-  border-right-color: color-mix(in srgb, var(--neon-accent) 25%, transparent);
-}
-
-.barNeonPink .engineActive,
-.barNeonCyan .engineActive {
-  box-shadow: inset 0 0 0 1.5px var(--neon-accent);
-}
-
-.barNeonPink .searchBtn,
-.barNeonCyan .searchBtn {
-  background: color-mix(in srgb, var(--neon-accent) 85%, #000);
-}
-
-.barNeonPink input::placeholder,
-.barNeonCyan input::placeholder {
-  color: color-mix(in srgb, var(--neon-accent) 35%, rgba(255, 255, 255, 0.3));
 }

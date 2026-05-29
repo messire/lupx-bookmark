@@ -38,6 +38,24 @@ const CARD_STYLES: { value: CardStyle; label: string; description: string }[] = 
   { value: "aurora", label: "Aurora", description: "Living gradient" },
 ];
 
+const MIN_WIDTH = 240;
+const MAX_WIDTH = 640;
+const DEFAULT_WIDTH = 360;
+const STORAGE_KEY = "settingsPanelWidth";
+
+function loadWidth(): number {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const n = parseInt(saved, 10);
+      if (n >= MIN_WIDTH && n <= MAX_WIDTH) return n;
+    }
+  } catch {
+    // ignore
+  }
+  return DEFAULT_WIDTH;
+}
+
 export default function SettingsPanel({
   open,
   settings,
@@ -51,6 +69,47 @@ export default function SettingsPanel({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const wallpapers = useWallpapers();
 
+  // ── Panel resize ────────────────────────────────────────────────────────
+  const [panelWidth, setPanelWidth] = useState<number>(loadWidth);
+  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  const handleResizeMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      dragRef.current = { startX: e.clientX, startWidth: panelWidth };
+    },
+    [panelWidth],
+  );
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!dragRef.current) return;
+      const delta = dragRef.current.startX - e.clientX;
+      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, dragRef.current.startWidth + delta));
+      setPanelWidth(next);
+    }
+    function onMouseUp() {
+      if (!dragRef.current) return;
+      dragRef.current = null;
+      // persist after drag ends
+      setPanelWidth((w) => {
+        try {
+          localStorage.setItem(STORAGE_KEY, String(w));
+        } catch {
+          /* ignore */
+        }
+        return w;
+      });
+    }
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  // ── Settings logic ──────────────────────────────────────────────────────
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
   useEffect(() => {
@@ -106,7 +165,13 @@ export default function SettingsPanel({
         onClick={handleClose}
       />
 
-      <aside className={`${styles.panel} ${open ? styles.panelOpen : ""}`}>
+      <aside
+        className={`${styles.panel} ${open ? styles.panelOpen : ""}`}
+        style={{ width: panelWidth }}
+      >
+        {/* Resize handle */}
+        <div className={styles.resizeHandle} onMouseDown={handleResizeMouseDown} />
+
         <header className={styles.header}>
           <div className={styles.headerActions}>
             <button className={styles.closeBtn} onClick={handleClose} title="Close">
