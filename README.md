@@ -2,6 +2,8 @@
 
 > A visual bookmark Speed Dial that replaces the Chrome New Tab page.
 
+[![Available in the Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-available-brightgreen?logo=google-chrome)](https://chromewebstore.google.com/detail/bimppdedfmedfgpceankflnegkdpgkep?utm_source=item-share-cb)
+
 Instead of the default blank tab, LUPX Bookmark greets you with a clean grid of bookmark cards — each showing a favicon and a title — organized into collapsible, drag-and-drop groups. Everything is
 stored locally in your browser; no account, no server, no tracking.
 
