@@ -17,6 +17,7 @@ interface SettingsPanelProps {
   groups: GroupInfo[];
   onAddGroup: () => void;
   onDeleteGroup: (id: string) => void;
+  onSwapGroups: (idxA: number, idxB: number) => void;
 }
 
 const BG_TYPES: { value: BackgroundType; label: string }[] = [
@@ -64,6 +65,7 @@ export default function SettingsPanel({
   groups,
   onAddGroup,
   onDeleteGroup,
+  onSwapGroups,
 }: SettingsPanelProps) {
   const [oldSettings, setOldSettings] = useState<Settings | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -197,8 +199,28 @@ export default function SettingsPanel({
                 +
               </button>
             </div>
-            {groups.map((g) => (
+            {groups.map((g, i) => (
               <div key={g.id} className={styles.groupRow}>
+                <div className={styles.groupMoveBtns}>
+                  <button
+                    className={styles.groupMoveBtn}
+                    onClick={() => onSwapGroups(i, i - 1)}
+                    title="Move up"
+                    aria-label={`Move group ${g.name} up`}
+                    disabled={i === 0}
+                  >
+                    &#9650;
+                  </button>
+                  <button
+                    className={styles.groupMoveBtn}
+                    onClick={() => onSwapGroups(i, i + 1)}
+                    title="Move down"
+                    aria-label={`Move group ${g.name} down`}
+                    disabled={i === groups.length - 1}
+                  >
+                    &#9660;
+                  </button>
+                </div>
                 <span className={styles.groupRowName}>{g.name}</span>
                 <button
                   className={styles.groupDeleteBtn}

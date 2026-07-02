@@ -73,8 +73,6 @@ function App() {
   const [addingToGroup, setAddingToGroup] = useState<string | null>(null);
   const [itemDragFrom, setItemDragFrom] = useState<ItemDrag | null>(null);
   const [itemDragOver, setItemDragOver] = useState<ItemDrag | null>(null);
-  const [groupDragFrom, setGroupDragFrom] = useState<number | null>(null);
-  const [groupDragOver, setGroupDragOver] = useState<number | null>(null);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -114,32 +112,19 @@ function App() {
     [itemDragFrom, moveItem],
   );
 
-  const handleGroupDragStart = useCallback((groupIdx: number) => {
-    setGroupDragFrom(groupIdx);
-  }, []);
-
-  const handleGroupDragOver = useCallback((groupIdx: number, e: React.DragEvent) => {
-    e.preventDefault();
-    setGroupDragOver(groupIdx);
-  }, []);
-
-  const handleGroupDrop = useCallback(
-    async (groupIdx: number) => {
-      if (groupDragFrom !== null && groupDragFrom !== groupIdx) {
-        await swapGroups(groupDragFrom, groupIdx);
-      }
-      setGroupDragFrom(null);
-      setGroupDragOver(null);
-    },
-    [groupDragFrom, swapGroups],
-  );
-
   const handleDragEnd = useCallback(() => {
     setItemDragFrom(null);
     setItemDragOver(null);
-    setGroupDragFrom(null);
-    setGroupDragOver(null);
   }, []);
+
+  // -- Group reordering (settings panel) --
+
+  const handleSwapGroups = useCallback(
+    async (idxA: number, idxB: number) => {
+      await swapGroups(idxA, idxB);
+    },
+    [swapGroups],
+  );
 
   // -- Modal --
 
@@ -206,11 +191,10 @@ function App() {
           />
         </div>
 
-        {groups.map((group, idx) => (
+        {groups.map((group) => (
           <AccordionGroup
             key={group.id}
             group={group}
-            groupIndex={idx}
             itemsPerRow={settings.itemsPerRow}
             cardWidth={cardWidth}
             showTitles={settings.showTitles}
@@ -218,18 +202,12 @@ function App() {
             onItemDragStart={handleItemDragStart}
             onItemDragOver={handleItemDragOver}
             onItemDrop={handleItemDrop}
-            onDragEnd={handleDragEnd}
             itemDragOverInfo={itemDragOver}
-            onGroupDragStart={handleGroupDragStart}
-            onGroupDragOver={handleGroupDragOver}
-            onGroupDrop={handleGroupDrop}
-            isGroupDragOver={groupDragOver === idx}
             onClickAdd={setAddingToGroup}
             onRename={renameGroup}
             onToggleCollapse={toggleCollapse}
             onRemoveItem={handleRemoveItem}
             onRenameItem={handleRenameItem}
-            settingsOpen={settingsOpen}
           />
         ))}
 
@@ -261,6 +239,7 @@ function App() {
           groups={groups.map((g) => ({ id: g.id, name: g.name }))}
           onAddGroup={handleAddGroup}
           onDeleteGroup={handleDeleteGroup}
+          onSwapGroups={handleSwapGroups}
         />
 
         {addingToGroup !== null && (

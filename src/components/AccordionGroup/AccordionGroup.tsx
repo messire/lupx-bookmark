@@ -34,7 +34,6 @@ interface DragOverInfo {
 
 interface AccordionGroupProps {
   group: AccordionGroupType;
-  groupIndex: number;
   itemsPerRow: number;
   cardWidth: number;
   showTitles: boolean;
@@ -44,14 +43,7 @@ interface AccordionGroupProps {
   onItemDragStart: (groupId: string, itemIdx: number) => void;
   onItemDragOver: (groupId: string, itemIdx: number, e: React.DragEvent) => void;
   onItemDrop: (groupId: string, itemIdx: number) => void;
-  onDragEnd: () => void;
   itemDragOverInfo: DragOverInfo | null;
-
-  // Group-level drag callbacks (for reordering groups)
-  onGroupDragStart: (groupIdx: number) => void;
-  onGroupDragOver: (groupIdx: number, e: React.DragEvent) => void;
-  onGroupDrop: (groupIdx: number) => void;
-  isGroupDragOver: boolean;
 
   // Data callbacks
   onClickAdd: (groupId: string) => void;
@@ -59,14 +51,10 @@ interface AccordionGroupProps {
   onToggleCollapse: (groupId: string) => Promise<void>;
   onRemoveItem: (groupId: string, itemIdx: number) => Promise<void>;
   onRenameItem: (groupId: string, itemIdx: number, title: string) => Promise<void>;
-
-  /** When false, drag handles and delete button are hidden */
-  settingsOpen: boolean;
 }
 
 export default function AccordionGroup({
   group,
-  groupIndex,
   itemsPerRow,
   cardWidth,
   showTitles,
@@ -74,18 +62,12 @@ export default function AccordionGroup({
   onItemDragStart,
   onItemDragOver,
   onItemDrop,
-  onDragEnd,
   itemDragOverInfo,
-  onGroupDragStart,
-  onGroupDragOver,
-  onGroupDrop,
-  isGroupDragOver,
   onClickAdd,
   onRename,
   onToggleCollapse,
   onRemoveItem,
   onRenameItem,
-  settingsOpen,
 }: AccordionGroupProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(group.name);
@@ -116,57 +98,20 @@ export default function AccordionGroup({
     }
   }
 
-  // -- Drag handle for group reordering --
-
-  function handleGroupDragStart(e: React.DragEvent) {
-    e.dataTransfer.effectAllowed = "move";
-    onGroupDragStart(groupIndex);
-  }
-
   // -- Layout helpers --
 
   const filledItems = group.items;
   const showAddCard = filledItems.length < MAX_ITEMS_PER_ACCORDION;
   const gridCols = "repeat(" + itemsPerRow + ", " + cardWidth + "px)";
 
-  const groupClass = [
-    styles.accordion,
-    ACCORDION_STYLE_CLASS[cardStyle],
-    isGroupDragOver ? styles.groupDragOver : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const groupClass = [styles.accordion, ACCORDION_STYLE_CLASS[cardStyle]].filter(Boolean).join(" ");
 
   // -- Render --
 
   return (
-    <div
-      className={groupClass}
-      onDragOver={settingsOpen ? (e) => onGroupDragOver(groupIndex, e) : undefined}
-      onDrop={settingsOpen ? () => onGroupDrop(groupIndex) : undefined}
-    >
+    <div className={groupClass}>
       {/* -- Header -- */}
       <div className={styles.header}>
-        {/* Drag handle - only visible when Settings panel is open */}
-        {settingsOpen && (
-          <div
-            className={styles.dragHandle}
-            draggable
-            onDragStart={handleGroupDragStart}
-            onDragEnd={onDragEnd}
-            title="Drag to reorder"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-              <circle cx="4" cy="3" r="1.2" />
-              <circle cx="10" cy="3" r="1.2" />
-              <circle cx="4" cy="7" r="1.2" />
-              <circle cx="10" cy="7" r="1.2" />
-              <circle cx="4" cy="11" r="1.2" />
-              <circle cx="10" cy="11" r="1.2" />
-            </svg>
-          </div>
-        )}
-
         {/* Collapse toggle */}
         <button
           className={styles.toggleBtn}
