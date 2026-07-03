@@ -14,6 +14,8 @@ import { createContext, useContext } from "react";
  *   icon is correct (Google S2 returns a generic default icon for sites it
  *   doesn't recognize, which still passes the probe), so this always
  *   invalidates rather than checking whether the previous result "failed".
+ *   No-op while a background revalidation pass is already in flight, since
+ *   that pass will refresh every bookmark (including this one) on its own.
  */
 export interface FaviconCacheApi {
   getFavicon: (url: string) => string | undefined;

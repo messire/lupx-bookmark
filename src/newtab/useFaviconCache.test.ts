@@ -305,4 +305,49 @@ describe("useFaviconCache — refreshFavicon", () => {
 
     expect(result.current.getFavicon("https://unknown.example.com")).toBeUndefined();
   });
+
+  it("is a no-op while a background revalidation pass is still in flight, avoiding a duplicate probe", async () => {
+    vi.useFakeTimers();
+    try {
+      // A probe that never calls onload/onerror can only resolve via
+      // probeImage()'s setTimeout fallback. Fake timers let us keep that
+      // timer from ever firing, so the background pass stays "stuck"
+      // in-flight for as long as this test needs it to.
+      class HangingImage {
+        naturalWidth = 0;
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        set src(_url: string) {
+          /* never resolves */
+        }
+      }
+      vi.stubGlobal("Image", HangingImage);
+
+      seedStorage("local", {
+        [CACHE_KEY]: { "https://ok.example.com": "https://cdn.example.com/fav.ico" },
+      });
+
+      const { result } = renderHook(() => useFaviconCache(["https://ok.example.com"]));
+      // Let the mount-time storage load resolve (a plain microtask, unaffected
+      // by fake timers) without advancing the stuck probe's timer.
+      await act(async () => {});
+
+      expect(result.current.getFavicon("https://ok.example.com")).toBe(
+        "https://cdn.example.com/fav.ico",
+      );
+
+      act(() => {
+        result.current.refreshFavicon("https://ok.example.com");
+      });
+
+      // Still the original cached value: refreshFavicon skipped because the
+      // background pass (stuck probing the very first direct variant) hasn't
+      // finished yet.
+      expect(result.current.getFavicon("https://ok.example.com")).toBe(
+        "https://cdn.example.com/fav.ico",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

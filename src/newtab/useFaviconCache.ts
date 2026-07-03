@@ -133,8 +133,15 @@ export function useFaviconCache(bookmarkUrls: string[]): {
    * is actually correct (Google S2's generic default icon passes the same
    * probe as a real favicon), so trust is re-earned on every visit rather
    * than gated behind an unreliable "did it fail" check.
+   *
+   * No-op while a background revalidation pass (see the probing effect above)
+   * is already in flight: that pass will resolve and persist a fresh result
+   * for every bookmark -- including this one -- once it finishes, so clearing
+   * here would just kick off a redundant second probe for the same icon.
    */
   const refreshFavicon = useCallback((url: string) => {
+    if (probingRef.current) return;
+
     setCache((prev) => {
       if (!(url in prev)) return prev;
       const next = { ...prev };
