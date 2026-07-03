@@ -442,6 +442,40 @@
   white-space: nowrap;
 }
 
+.groupMoveBtns {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.groupMoveBtn {
+  width: 18px;
+  height: 14px;
+  border: none;
+  background: transparent;
+  color: var(--color-subtle);
+  cursor: pointer;
+  font-size: 8px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+.groupMoveBtn:hover:not(:disabled) {
+  color: var(--color-accent);
+  background: var(--color-card-hover);
+}
+
+.groupMoveBtn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
 .groupDeleteBtn {
   flex-shrink: 0;
   width: 24px;

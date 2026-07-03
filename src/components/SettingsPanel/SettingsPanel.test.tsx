@@ -29,6 +29,7 @@ function renderPanel(
   const onClose = vi.fn();
   const onAddGroup = vi.fn();
   const onDeleteGroup = vi.fn();
+  const onSwapGroups = vi.fn();
 
   const { rerender } = render(
     <SettingsPanel
@@ -39,6 +40,7 @@ function renderPanel(
       groups={groups}
       onAddGroup={onAddGroup}
       onDeleteGroup={onDeleteGroup}
+      onSwapGroups={onSwapGroups}
     />,
   );
 
@@ -52,11 +54,12 @@ function renderPanel(
         groups={groups}
         onAddGroup={onAddGroup}
         onDeleteGroup={onDeleteGroup}
+        onSwapGroups={onSwapGroups}
       />,
     );
   }
 
-  return { onUpdate, onClose, onAddGroup, onDeleteGroup, rerenderWith };
+  return { onUpdate, onClose, onAddGroup, onDeleteGroup, onSwapGroups, rerenderWith };
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────
@@ -216,6 +219,46 @@ describe("SettingsPanel — group management", () => {
 
     const btn = screen.getByLabelText("Delete group Work") as HTMLButtonElement;
     expect(btn.disabled).toBe(false);
+  });
+
+  it("calls onSwapGroups(i, i-1) when a group's move-up button is clicked", () => {
+    const { onSwapGroups } = renderPanel(DEFAULT_SETTINGS, [
+      { id: "g1", name: "Work" },
+      { id: "g2", name: "Personal" },
+    ]);
+
+    fireEvent.click(screen.getByLabelText("Move group Personal up"));
+
+    expect(onSwapGroups).toHaveBeenCalledWith(1, 0);
+  });
+
+  it("calls onSwapGroups(i, i+1) when a group's move-down button is clicked", () => {
+    const { onSwapGroups } = renderPanel(DEFAULT_SETTINGS, [
+      { id: "g1", name: "Work" },
+      { id: "g2", name: "Personal" },
+    ]);
+
+    fireEvent.click(screen.getByLabelText("Move group Work down"));
+
+    expect(onSwapGroups).toHaveBeenCalledWith(0, 1);
+  });
+
+  it("disables move-up for the first group and move-down for the last group", () => {
+    renderPanel(DEFAULT_SETTINGS, [
+      { id: "g1", name: "Work" },
+      { id: "g2", name: "Personal" },
+    ]);
+
+    expect((screen.getByLabelText("Move group Work up") as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByLabelText("Move group Personal down") as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect((screen.getByLabelText("Move group Work down") as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    expect((screen.getByLabelText("Move group Personal up") as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 });
 
