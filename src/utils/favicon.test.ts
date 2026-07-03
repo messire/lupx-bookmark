@@ -29,14 +29,23 @@ describe("getFaviconFallbackUrl (Google S2)", () => {
 });
 
 describe("getDirectFaviconUrls", () => {
-  it("returns favicon.ico then favicon.png at the page's origin", () => {
+  it("returns every well-known variant, in probing order, at the page's origin", () => {
     const result = getDirectFaviconUrls("https://example.com/some/page?q=1");
-    expect(result).toEqual(["https://example.com/favicon.ico", "https://example.com/favicon.png"]);
+    expect(result).toEqual([
+      "https://example.com/favicon.ico",
+      "https://example.com/favicon.png",
+      "https://example.com/favicon.svg",
+      "https://example.com/apple-touch-icon.png",
+      "https://example.com/apple-touch-icon-precomposed.png",
+      "https://example.com/icon.png",
+      "https://example.com/icon.svg",
+    ]);
   });
 
   it("strips the path - uses origin only", () => {
     const result = getDirectFaviconUrls("https://github.com/user/repo");
-    expect(result).toEqual(["https://github.com/favicon.ico", "https://github.com/favicon.png"]);
+    expect(result[0]).toBe("https://github.com/favicon.ico");
+    expect(result.every((u) => u.startsWith("https://github.com/"))).toBe(true);
   });
 
   it("returns an empty array for an invalid URL", () => {

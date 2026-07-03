@@ -20,10 +20,11 @@ const STYLE_CLASS: Record<CardStyle, string> = {
 
 // Live fallback chain (used while cache is being populated):
 // chrome://favicon2/ is handled via fetch() in useFaviconCache -- NOT usable as <img src>
-//   1. Google S2       - widely known fallback
-//   2. direct favicon.ico / favicon.png - straight from the site's own origin
-//   3. pin.svg         - final fallback
-type FaviconStage = "google" | "direct-ico" | "direct-png" | "pin";
+//   1. direct favicon/icon files, in order - straight from the site's own origin
+//   2. Google S2 (fallback only -- see favicon.ts for why)
+//   3. pin.svg - final fallback
+// A number is an index into getDirectFaviconUrls(url); "google" and "pin" are terminal stages.
+type FaviconStage = number | "google" | "pin";
 
 interface BookmarkCardProps {
   slot: SpeedDialSlot;
@@ -50,9 +51,9 @@ export default function BookmarkCard({
   onRemove,
   onRename,
 }: BookmarkCardProps) {
-  const { getFavicon, retryFavicon } = useFaviconContext();
+  const { getFavicon, refreshFavicon } = useFaviconContext();
 
-  const [faviconStage, setFaviconStage] = useState<FaviconStage>("google");
+  const [faviconStage, setFaviconStage] = useState<FaviconStage>(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -84,10 +85,10 @@ export default function BookmarkCard({
     if (cachedFavicon !== undefined) {
       return cachedFavicon || PIN_ICON;
     }
-    // Cache not yet populated: Google S2 -> direct favicon.ico -> direct favicon.png -> pin
+    // Cache not yet populated: direct favicon variants -> Google S2 -> pin
+    if (typeof faviconStage === "number")
+      return getDirectFaviconUrls(url)[faviconStage] || PIN_ICON;
     if (faviconStage === "google") return getFaviconFallbackUrl(url, 64) || PIN_ICON;
-    if (faviconStage === "direct-ico") return getDirectFaviconUrls(url)[0] || PIN_ICON;
-    if (faviconStage === "direct-png") return getDirectFaviconUrls(url)[1] || PIN_ICON;
     return PIN_ICON;
   }
 
@@ -97,17 +98,22 @@ export default function BookmarkCard({
 
   function handleImgError() {
     if (cachedFavicon !== undefined) return;
-    if (faviconStage === "google") setFaviconStage("direct-ico");
-    else if (faviconStage === "direct-ico") setFaviconStage("direct-png");
-    else if (faviconStage === "direct-png") setFaviconStage("pin");
+    if (typeof faviconStage === "number") {
+      const directUrls = getDirectFaviconUrls(url);
+      if (faviconStage + 1 < directUrls.length) setFaviconStage(faviconStage + 1);
+      else setFaviconStage("google");
+    } else if (faviconStage === "google") {
+      setFaviconStage("pin");
+    }
   }
 
   function handleClick(e: React.MouseEvent) {
     if (confirmDelete || editing) return;
     e.preventDefault();
-    // Icon never resolved (cached as "") -- retry now that the user is actually
-    // visiting the site; the visit itself often teaches Chrome the real favicon.
-    if (cachedFavicon === "") retryFavicon(url);
+    // Always re-check the favicon on click -- a cached "success" isn't proof
+    // it's the real icon (Google S2 returns a generic default icon that still
+    // passes the probe), so trust is re-earned on every visit.
+    refreshFavicon(url);
     window.location.href = url;
   }
 

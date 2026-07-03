@@ -225,7 +225,8 @@ export default function AccordionGroup({
 
 // -- Mini favicon (16x16) for collapsed state --
 
-type MiniStage = "google" | "direct-ico" | "direct-png" | "pin";
+// A number is an index into getDirectFaviconUrls(item.url); "google" and "pin" are terminal stages.
+type MiniStage = number | "google" | "pin";
 
 /** Rounds an arbitrary mini icon size to a size bucket the favicon services support. */
 function faviconSizeBucket(size: number): 16 | 32 | 64 {
@@ -235,27 +236,30 @@ function faviconSizeBucket(size: number): 16 | 32 | 64 {
 }
 
 function MiniIcon({ item, size }: { item: FilledSlot; size: number }) {
-  const { getFavicon, retryFavicon } = useFaviconContext();
-  const [stage, setStage] = useState<MiniStage>("google");
+  const { getFavicon, refreshFavicon } = useFaviconContext();
+  const [stage, setStage] = useState<MiniStage>(0);
 
   const cached = getFavicon(item.url); // undefined=probing, ""=none, "url"=use it
   const linkBoxSize = size + 6;
 
   function getSrc(): string {
     if (cached !== undefined) return cached || PIN_ICON;
-    // Cache not yet populated: Google S2 -> direct favicon.ico -> direct favicon.png -> pin
+    // Cache not yet populated: direct favicon variants -> Google S2 -> pin
+    if (typeof stage === "number") return getDirectFaviconUrls(item.url)[stage] || PIN_ICON;
     if (stage === "google")
       return getFaviconFallbackUrl(item.url, faviconSizeBucket(size)) || PIN_ICON;
-    if (stage === "direct-ico") return getDirectFaviconUrls(item.url)[0] || PIN_ICON;
-    if (stage === "direct-png") return getDirectFaviconUrls(item.url)[1] || PIN_ICON;
     return PIN_ICON;
   }
 
   function handleError() {
     if (cached !== undefined) return;
-    if (stage === "google") setStage("direct-ico");
-    else if (stage === "direct-ico") setStage("direct-png");
-    else if (stage === "direct-png") setStage("pin");
+    if (typeof stage === "number") {
+      const directUrls = getDirectFaviconUrls(item.url);
+      if (stage + 1 < directUrls.length) setStage(stage + 1);
+      else setStage("google");
+    } else if (stage === "google") {
+      setStage("pin");
+    }
   }
 
   return (
@@ -266,9 +270,9 @@ function MiniIcon({ item, size }: { item: FilledSlot; size: number }) {
       title={item.title ?? item.url}
       onClick={(e) => {
         e.preventDefault();
-        // Icon never resolved (cached as "") -- retry now that the user is
-        // actually visiting the site.
-        if (cached === "") retryFavicon(item.url);
+        // Always re-check the favicon on click -- a cached "success" isn't
+        // proof it's the real icon (see BookmarkCard's handleClick).
+        refreshFavicon(item.url);
         window.location.href = item.url;
       }}
     >

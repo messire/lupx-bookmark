@@ -2,10 +2,12 @@
  * Favicon URL helpers.
  *
  * Chain used in BookmarkCard / MiniIcon / useFaviconCache:
- *   1. Google S2            - widely used third-party favicon service, usually fast and reliable
- *   2. Direct favicon.ico/.png - fetched straight from the site's own origin
- *   3. chrome://favicon2/   - Chrome internal cache (cache-only; not usable as a live <img src>)
- *   4. pin.svg              - final fallback
+ *   1. Direct favicon files  - fetched straight from the site's own origin (most accurate)
+ *   2. Google S2             - third-party favicon service; used as a fallback only, because it
+ *                              returns a generic default icon (not an error) for sites it doesn't
+ *                              recognize, so it "succeeds" even when it has nothing real to show
+ *   3. chrome://favicon2/    - Chrome internal cache (cache-only; not usable as a live <img src>)
+ *   4. pin.svg               - final fallback
  */
 
 /**
@@ -51,7 +53,12 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-/** First: Google S2 favicon service. */
+/**
+ * Second: Google S2 favicon service.
+ * Kept as a fallback (not primary) because it returns a generic default icon --
+ * not an error -- for sites it doesn't have a real favicon for, so treating it
+ * as authoritative means we'd rarely ever fall through to the site's own icon.
+ */
 export function getFaviconFallbackUrl(pageUrl: string, size: 16 | 32 | 64 = 32): string {
   try {
     const origin = new URL(pageUrl).origin;
@@ -62,14 +69,23 @@ export function getFaviconFallbackUrl(pageUrl: string, size: 16 | 32 | 64 = 32):
 }
 
 /**
- * Second: try the site's own favicon files directly (well-known paths).
- * Order returned is the probing order: .ico first, then .png.
+ * First: try the site's own favicon/icon files directly (well-known paths).
+ * Order returned is the probing order -- classic favicon formats first, then
+ * the higher-res touch-icon variants, then generic "icon.*" conventions.
  * Not affected by third-party favicon-lookup services being down, rate-limited, or wrong.
  */
 export function getDirectFaviconUrls(pageUrl: string): string[] {
   try {
     const origin = new URL(pageUrl).origin;
-    return [origin + "/favicon.ico", origin + "/favicon.png"];
+    return [
+      origin + "/favicon.ico",
+      origin + "/favicon.png",
+      origin + "/favicon.svg",
+      origin + "/apple-touch-icon.png",
+      origin + "/apple-touch-icon-precomposed.png",
+      origin + "/icon.png",
+      origin + "/icon.svg",
+    ];
   } catch {
     return [];
   }

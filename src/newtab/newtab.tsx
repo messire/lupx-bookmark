@@ -90,7 +90,7 @@ function App() {
     () => groups.flatMap((g) => g.items.flatMap((i) => (i.url ? [i.url] : []))),
     [groups],
   );
-  const { getFavicon, retryFavicon } = useFaviconCache(allBookmarkUrls);
+  const { getFavicon, refreshFavicon } = useFaviconCache(allBookmarkUrls);
 
   // -- Drag handlers --
 
@@ -182,7 +182,7 @@ function App() {
   // -- Render --
 
   return (
-    <FaviconCacheContext.Provider value={{ getFavicon, retryFavicon }}>
+    <FaviconCacheContext.Provider value={{ getFavicon, refreshFavicon }}>
       <div className={styles.page} onDragEnd={handleDragEnd}>
         <div className={styles.searchBarRow}>
           <SearchBar

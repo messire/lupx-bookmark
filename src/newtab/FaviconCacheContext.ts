@@ -8,19 +8,21 @@ import { createContext, useContext } from "react";
  *   ""         - cached as "no favicon found" (show pin.svg)
  *   "https://..." - cached working favicon URL (use directly)
  *
- * retryFavicon(url):
- *   Clears a previously-failed ("") cache entry so it gets a fresh attempt --
- *   call this right before navigating to a bookmark whose icon never resolved.
- *   No-op for URLs that resolved successfully or aren't cached yet.
+ * refreshFavicon(url):
+ *   Clears the cached entry so the next resolution starts fresh -- call this
+ *   right before navigating to a bookmark. A cached "success" isn't proof the
+ *   icon is correct (Google S2 returns a generic default icon for sites it
+ *   doesn't recognize, which still passes the probe), so this always
+ *   invalidates rather than checking whether the previous result "failed".
  */
 export interface FaviconCacheApi {
   getFavicon: (url: string) => string | undefined;
-  retryFavicon: (url: string) => void;
+  refreshFavicon: (url: string) => void;
 }
 
 const noopFaviconCache: FaviconCacheApi = {
   getFavicon: () => undefined,
-  retryFavicon: () => {},
+  refreshFavicon: () => {},
 };
 
 export const FaviconCacheContext = createContext<FaviconCacheApi>(noopFaviconCache);
