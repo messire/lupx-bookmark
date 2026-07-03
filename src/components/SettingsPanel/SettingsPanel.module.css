@@ -442,6 +442,51 @@
   white-space: nowrap;
 }
 
+/* Mini icon size stepper, shown per-group next to the name */
+.iconSizeControl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.iconSizeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--color-subtle);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+.iconSizeBtn:hover:not(:disabled) {
+  color: var(--color-accent);
+  background: var(--color-card-hover);
+}
+
+.iconSizeBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.iconSizeValue {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+  min-width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
 .groupMoveBtns {
   display: flex;
   flex-direction: column;

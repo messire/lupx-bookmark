@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { AccordionGroup, SpeedDialSlot } from "../types";
+import { DEFAULT_MINI_ICON_SIZE } from "../types";
 
 const STORAGE_KEY = "accordionGroups";
 /** Legacy key from the old flat-grid implementation — migrated on first load. */
@@ -12,7 +13,12 @@ function uid(): string {
 }
 
 function makeGroup(name: string): AccordionGroup {
-  return { id: uid(), name, collapsed: false, items: [] };
+  return { id: uid(), name, collapsed: false, items: [], miniIconSize: DEFAULT_MINI_ICON_SIZE };
+}
+
+/** Fills in miniIconSize for groups saved before this field existed. */
+function withMiniIconSizeDefault(groups: AccordionGroup[]): AccordionGroup[] {
+  return groups.map((g) => ({ ...g, miniIconSize: g.miniIconSize ?? DEFAULT_MINI_ICON_SIZE }));
 }
 
 function makeSlot(url: string, title: string): SpeedDialSlot {
@@ -74,6 +80,8 @@ export interface UseAccordionsResult {
   renameGroup: (groupId: string, name: string) => Promise<void>;
   /** Toggle the collapsed state of a group. */
   toggleCollapse: (groupId: string) => Promise<void>;
+  /** Set the mini favicon size (px) used when this group is collapsed. */
+  setIconSize: (groupId: string, size: number) => Promise<void>;
   /** Swap two groups by index. */
   swapGroups: (idxA: number, idxB: number) => Promise<void>;
   /** Delete a group by id (with all its items). */
@@ -109,6 +117,7 @@ export function useAccordions(): UseAccordionsResult {
 
     (async () => {
       let loaded = await loadFromStorage();
+      if (loaded) loaded = withMiniIconSizeDefault(loaded);
 
       if (!loaded) {
         const legacy = await loadLegacy();
@@ -137,7 +146,7 @@ export function useAccordions(): UseAccordionsResult {
   useEffect(() => {
     function onChanged(changes: Record<string, chrome.storage.StorageChange>, area: string) {
       if (area === "local" && STORAGE_KEY in changes) {
-        const updated = changes[STORAGE_KEY].newValue as AccordionGroup[];
+        const updated = withMiniIconSizeDefault(changes[STORAGE_KEY].newValue as AccordionGroup[]);
         groupsRef.current = updated;
         setGroups(updated);
       }
@@ -233,6 +242,16 @@ export function useAccordions(): UseAccordionsResult {
     [persist],
   );
 
+  const setIconSize = useCallback(
+    async (groupId: string, size: number) => {
+      const next = groupsRef.current.map((g) =>
+        g.id !== groupId ? g : { ...g, miniIconSize: size },
+      );
+      await persist(next);
+    },
+    [persist],
+  );
+
   const swapGroups = useCallback(
     async (idxA: number, idxB: number) => {
       if (idxA === idxB) return;
@@ -260,6 +279,7 @@ export function useAccordions(): UseAccordionsResult {
     renameItem,
     renameGroup,
     toggleCollapse,
+    setIconSize,
     swapGroups,
     deleteGroup,
   };
