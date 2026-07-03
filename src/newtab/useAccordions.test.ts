@@ -9,7 +9,7 @@ import { seedStorage } from "../test/setup";
 function makeGroup(
   overrides: Partial<AccordionGroup> & { id: string; name: string },
 ): AccordionGroup {
-  return { collapsed: false, items: [], ...overrides };
+  return { collapsed: false, items: [], miniIconSize: 16, ...overrides };
 }
 
 function makeSlot(overrides: Partial<SpeedDialSlot> & { id: string }): SpeedDialSlot {
@@ -294,6 +294,49 @@ describe("useAccordions — toggleCollapse", () => {
       await result.current.toggleCollapse("g1");
     });
     expect(result.current.groups[0].collapsed).toBe(false);
+  });
+});
+
+describe("useAccordions — setIconSize", () => {
+  it("updates the mini icon size for the given group", async () => {
+    const groups = [makeGroup({ id: "g1", name: "Work", miniIconSize: 16 })];
+    seedStorage("local", { accordionGroups: groups });
+
+    const { result } = await mountHook();
+
+    await act(async () => {
+      await result.current.setIconSize("g1", 24);
+    });
+
+    expect(result.current.groups[0].miniIconSize).toBe(24);
+  });
+
+  it("leaves other groups' icon size untouched", async () => {
+    const groups = [
+      makeGroup({ id: "g1", name: "Work", miniIconSize: 16 }),
+      makeGroup({ id: "g2", name: "Personal", miniIconSize: 20 }),
+    ];
+    seedStorage("local", { accordionGroups: groups });
+
+    const { result } = await mountHook();
+
+    await act(async () => {
+      await result.current.setIconSize("g1", 32);
+    });
+
+    expect(result.current.groups[1].miniIconSize).toBe(20);
+  });
+});
+
+describe("useAccordions — miniIconSize migration", () => {
+  it("defaults miniIconSize to 16 for groups saved before the field existed", async () => {
+    // Simulates old data shape: no miniIconSize key at all.
+    const legacyShapeGroup = { id: "g1", name: "Work", collapsed: false, items: [] };
+    seedStorage("local", { accordionGroups: [legacyShapeGroup] });
+
+    const { result } = await mountHook();
+
+    expect(result.current.groups[0].miniIconSize).toBe(16);
   });
 });
 

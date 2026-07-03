@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { fetchChromeFavicon, getFaviconFallbackUrl } from "../utils/favicon";
+import { fetchChromeFavicon, getFaviconFallbackUrl, getDirectFaviconUrls } from "../utils/favicon";
 
 const CACHE_KEY = "faviconCache_v1";
 
@@ -30,13 +30,20 @@ function probeImage(src: string, timeoutMs = 5000): Promise<boolean> {
  * Returns "" if none work.
  */
 async function resolveUrl(bookmarkUrl: string): Promise<string> {
-  // 1. Chrome internal cache (fetch -> blob URL; chrome:// cannot be used as <img src>)
-  const chromeBlobUrl = await fetchChromeFavicon(bookmarkUrl, 32);
-  if (chromeBlobUrl) return chromeBlobUrl;
+  // 1. Direct favicon/icon files from the site's own origin (most accurate)
+  for (const directUrl of getDirectFaviconUrls(bookmarkUrl)) {
+    if (await probeImage(directUrl)) return directUrl;
+  }
 
-  // 2. Google S2
+  // 2. Google S2 -- fallback only: it returns a generic default icon (not an
+  // error) for sites it doesn't recognize, so it isn't a reliable signal that
+  // the *real* favicon was found.
   const s2Url = getFaviconFallbackUrl(bookmarkUrl, 32);
   if (s2Url && (await probeImage(s2Url))) return s2Url;
+
+  // 3. Chrome internal cache (fetch -> blob URL; chrome:// cannot be used as <img src>)
+  const chromeBlobUrl = await fetchChromeFavicon(bookmarkUrl, 32);
+  if (chromeBlobUrl) return chromeBlobUrl;
 
   return "";
 }
@@ -52,9 +59,13 @@ function loadStoredCache(): Promise<FaviconCache> {
 /**
  * Manages a persistent favicon cache in chrome.storage.local.
  *
- * On mount: loads the existing cache.
- * Whenever bookmarkUrls changes: probes any URLs that are not yet cached
- *   (sequentially, in the background) and persists results.
+ * On mount: loads the existing cache so already-known icons render instantly.
+ * Whenever bookmarkUrls changes: re-resolves *every* bookmark's favicon in the
+ *   background (not just ones missing from the cache) and persists results.
+ *   This is intentional -- a stored favicon isn't proof it's the real one
+ *   (Google S2 returns a generic default icon that still "succeeds" the
+ *   probe), so every page load gets a fresh background re-check rather than
+ *   trusting whatever was cached before.
  *
  * Returns getFavicon(url):
  *   undefined  - not yet resolved (caller should use live fallback chain)
@@ -63,17 +74,19 @@ function loadStoredCache(): Promise<FaviconCache> {
  */
 export function useFaviconCache(bookmarkUrls: string[]): {
   getFavicon: (url: string) => string | undefined;
+  refreshFavicon: (url: string) => void;
 } {
   const [cache, setCache] = useState<FaviconCache>({});
   const probingRef = useRef(false);
 
-  // Load from storage on mount
+  // Load from storage on mount so already-known icons render immediately.
   useEffect(() => {
     loadStoredCache().then((stored) => setCache(stored));
   }, []);
 
-  // Probe any uncached URLs whenever the bookmark list changes
-
+  // Re-verify every bookmark's favicon in the background whenever the
+  // bookmark list changes (including on every page load, since this effect
+  // re-runs on mount).
   const urlsKey = bookmarkUrls.join(",");
   useEffect(() => {
     if (bookmarkUrls.length === 0) return;
@@ -84,17 +97,9 @@ export function useFaviconCache(bookmarkUrls: string[]): {
 
     (async () => {
       const stored = await loadStoredCache();
-      const missing = bookmarkUrls.filter((url) => !(url in stored));
-
-      if (missing.length === 0 || cancelled) {
-        probingRef.current = false;
-        // Still sync in-memory cache with storage (handles hot-reloads)
-        if (!cancelled) setCache(stored);
-        return;
-      }
-
       const updates: FaviconCache = { ...stored };
-      for (const url of missing) {
+
+      for (const url of bookmarkUrls) {
         if (cancelled) break;
         updates[url] = await resolveUrl(url);
       }
@@ -121,5 +126,37 @@ export function useFaviconCache(bookmarkUrls: string[]): {
     [cache],
   );
 
-  return { getFavicon };
+  /**
+   * Clears the cached favicon for a URL, forcing a fresh resolution.
+   *
+   * Called on every bookmark click: a cached "success" is not proof the icon
+   * is actually correct (Google S2's generic default icon passes the same
+   * probe as a real favicon), so trust is re-earned on every visit rather
+   * than gated behind an unreliable "did it fail" check.
+   *
+   * No-op while a background revalidation pass (see the probing effect above)
+   * is already in flight: that pass will resolve and persist a fresh result
+   * for every bookmark -- including this one -- once it finishes, so clearing
+   * here would just kick off a redundant second probe for the same icon.
+   */
+  const refreshFavicon = useCallback((url: string) => {
+    if (probingRef.current) return;
+
+    setCache((prev) => {
+      if (!(url in prev)) return prev;
+      const next = { ...prev };
+      delete next[url];
+      return next;
+    });
+
+    chrome.storage.local.get(CACHE_KEY, (result) => {
+      const stored = (result[CACHE_KEY] as FaviconCache) ?? {};
+      if (!(url in stored)) return;
+      const next = { ...stored };
+      delete next[url];
+      chrome.storage.local.set({ [CACHE_KEY]: next });
+    });
+  }, []);
+
+  return { getFavicon, refreshFavicon };
 }

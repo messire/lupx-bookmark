@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import BookmarkCard from "../BookmarkCard/BookmarkCard";
-import { getFaviconFallbackUrl } from "../../utils/favicon";
+import { getFaviconFallbackUrl, getDirectFaviconUrls } from "../../utils/favicon";
 import { useFaviconContext } from "../../newtab/FaviconCacheContext";
 import type { AccordionGroup as AccordionGroupType, CardStyle, SpeedDialSlot } from "../../types";
 import { MAX_ITEMS_PER_ACCORDION } from "../../types";
@@ -13,6 +13,11 @@ const PIN_ICON = chrome.runtime.getURL("icons/pin.svg");
 
 // Empty slot sentinel used for the "add" card
 const EMPTY_SLOT: SpeedDialSlot = { id: "__add__", url: null, title: null };
+
+/** Header height when the group is expanded (or collapsed with default-size icons). */
+const DEFAULT_HEADER_HEIGHT = 44;
+/** Breathing room kept above/below the mini icon row when the header grows. */
+const HEADER_VERTICAL_PADDING = 8;
 
 // Maps card style to extra CSS class on the accordion container
 const ACCORDION_STYLE_CLASS: Record<CardStyle, string> = {
@@ -34,7 +39,6 @@ interface DragOverInfo {
 
 interface AccordionGroupProps {
   group: AccordionGroupType;
-  groupIndex: number;
   itemsPerRow: number;
   cardWidth: number;
   showTitles: boolean;
@@ -44,14 +48,7 @@ interface AccordionGroupProps {
   onItemDragStart: (groupId: string, itemIdx: number) => void;
   onItemDragOver: (groupId: string, itemIdx: number, e: React.DragEvent) => void;
   onItemDrop: (groupId: string, itemIdx: number) => void;
-  onDragEnd: () => void;
   itemDragOverInfo: DragOverInfo | null;
-
-  // Group-level drag callbacks (for reordering groups)
-  onGroupDragStart: (groupIdx: number) => void;
-  onGroupDragOver: (groupIdx: number, e: React.DragEvent) => void;
-  onGroupDrop: (groupIdx: number) => void;
-  isGroupDragOver: boolean;
 
   // Data callbacks
   onClickAdd: (groupId: string) => void;
@@ -59,14 +56,10 @@ interface AccordionGroupProps {
   onToggleCollapse: (groupId: string) => Promise<void>;
   onRemoveItem: (groupId: string, itemIdx: number) => Promise<void>;
   onRenameItem: (groupId: string, itemIdx: number, title: string) => Promise<void>;
-
-  /** When false, drag handles and delete button are hidden */
-  settingsOpen: boolean;
 }
 
 export default function AccordionGroup({
   group,
-  groupIndex,
   itemsPerRow,
   cardWidth,
   showTitles,
@@ -74,18 +67,12 @@ export default function AccordionGroup({
   onItemDragStart,
   onItemDragOver,
   onItemDrop,
-  onDragEnd,
   itemDragOverInfo,
-  onGroupDragStart,
-  onGroupDragOver,
-  onGroupDrop,
-  isGroupDragOver,
   onClickAdd,
   onRename,
   onToggleCollapse,
   onRemoveItem,
   onRenameItem,
-  settingsOpen,
 }: AccordionGroupProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(group.name);
@@ -116,57 +103,29 @@ export default function AccordionGroup({
     }
   }
 
-  // -- Drag handle for group reordering --
-
-  function handleGroupDragStart(e: React.DragEvent) {
-    e.dataTransfer.effectAllowed = "move";
-    onGroupDragStart(groupIndex);
-  }
-
   // -- Layout helpers --
 
   const filledItems = group.items;
   const showAddCard = filledItems.length < MAX_ITEMS_PER_ACCORDION;
   const gridCols = "repeat(" + itemsPerRow + ", " + cardWidth + "px)";
 
-  const groupClass = [
-    styles.accordion,
-    ACCORDION_STYLE_CLASS[cardStyle],
-    isGroupDragOver ? styles.groupDragOver : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const groupClass = [styles.accordion, ACCORDION_STYLE_CLASS[cardStyle]].filter(Boolean).join(" ");
+
+  // When collapsed, the header must grow with the mini icon size so the icons
+  // keep consistent breathing room instead of just overflowing a fixed-height row.
+  // DEFAULT_HEADER_HEIGHT / HEADER_VERTICAL_PADDING mirror the values baked into
+  // AccordionGroup.module.css's .header rule.
+  const miniLinkBoxSize = group.miniIconSize + 6; // matches MiniIcon's linkBoxSize below
+  const headerHeight = group.collapsed
+    ? Math.max(DEFAULT_HEADER_HEIGHT, miniLinkBoxSize + HEADER_VERTICAL_PADDING * 2)
+    : undefined;
 
   // -- Render --
 
   return (
-    <div
-      className={groupClass}
-      onDragOver={settingsOpen ? (e) => onGroupDragOver(groupIndex, e) : undefined}
-      onDrop={settingsOpen ? () => onGroupDrop(groupIndex) : undefined}
-    >
+    <div className={groupClass}>
       {/* -- Header -- */}
-      <div className={styles.header}>
-        {/* Drag handle - only visible when Settings panel is open */}
-        {settingsOpen && (
-          <div
-            className={styles.dragHandle}
-            draggable
-            onDragStart={handleGroupDragStart}
-            onDragEnd={onDragEnd}
-            title="Drag to reorder"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-              <circle cx="4" cy="3" r="1.2" />
-              <circle cx="10" cy="3" r="1.2" />
-              <circle cx="4" cy="7" r="1.2" />
-              <circle cx="10" cy="7" r="1.2" />
-              <circle cx="4" cy="11" r="1.2" />
-              <circle cx="10" cy="11" r="1.2" />
-            </svg>
-          </div>
-        )}
-
+      <div className={styles.header} style={headerHeight ? { height: headerHeight } : undefined}>
         {/* Collapse toggle */}
         <button
           className={styles.toggleBtn}
@@ -211,7 +170,7 @@ export default function AccordionGroup({
             {filledItems
               .filter((i): i is FilledSlot => i.url !== null)
               .map((item) => (
-                <MiniIcon key={item.id} item={item} />
+                <MiniIcon key={item.id} item={item} size={group.miniIconSize} />
               ))}
           </div>
         )}
@@ -266,40 +225,62 @@ export default function AccordionGroup({
 
 // -- Mini favicon (16x16) for collapsed state --
 
-type MiniStage = "google" | "pin";
+// A number is an index into getDirectFaviconUrls(item.url); "google" and "pin" are terminal stages.
+type MiniStage = number | "google" | "pin";
 
-function MiniIcon({ item }: { item: FilledSlot }) {
-  const getFavicon = useFaviconContext();
-  const [stage, setStage] = useState<MiniStage>("google");
+/** Rounds an arbitrary mini icon size to a size bucket the favicon services support. */
+function faviconSizeBucket(size: number): 16 | 32 | 64 {
+  if (size <= 16) return 16;
+  if (size <= 32) return 32;
+  return 64;
+}
+
+function MiniIcon({ item, size }: { item: FilledSlot; size: number }) {
+  const { getFavicon, refreshFavicon } = useFaviconContext();
+  const [stage, setStage] = useState<MiniStage>(0);
 
   const cached = getFavicon(item.url); // undefined=probing, ""=none, "url"=use it
+  const linkBoxSize = size + 6;
 
   function getSrc(): string {
     if (cached !== undefined) return cached || PIN_ICON;
-    if (stage === "google") return getFaviconFallbackUrl(item.url, 16) || PIN_ICON;
+    // Cache not yet populated: direct favicon variants -> Google S2 -> pin
+    if (typeof stage === "number") return getDirectFaviconUrls(item.url)[stage] || PIN_ICON;
+    if (stage === "google")
+      return getFaviconFallbackUrl(item.url, faviconSizeBucket(size)) || PIN_ICON;
     return PIN_ICON;
   }
 
   function handleError() {
     if (cached !== undefined) return;
-    if (stage === "google") setStage("pin");
+    if (typeof stage === "number") {
+      const directUrls = getDirectFaviconUrls(item.url);
+      if (stage + 1 < directUrls.length) setStage(stage + 1);
+      else setStage("google");
+    } else if (stage === "google") {
+      setStage("pin");
+    }
   }
 
   return (
     <a
       href={item.url}
       className={styles.miniIconLink}
+      style={{ width: linkBoxSize, height: linkBoxSize }}
       title={item.title ?? item.url}
       onClick={(e) => {
         e.preventDefault();
+        // Always re-check the favicon on click -- a cached "success" isn't
+        // proof it's the real icon (see BookmarkCard's handleClick).
+        refreshFavicon(item.url);
         window.location.href = item.url;
       }}
     >
       <img
         src={getSrc()}
         alt=""
-        width={16}
-        height={16}
+        width={size}
+        height={size}
         className={styles.miniIconImg}
         onError={handleError}
       />

@@ -22,13 +22,15 @@ afterEach(cleanup);
 
 function renderPanel(
   settings: Settings = DEFAULT_SETTINGS,
-  groups = [{ id: "g1", name: "Work" }],
+  groups = [{ id: "g1", name: "Work", miniIconSize: 16 }],
   open = true,
 ) {
   const onUpdate = vi.fn();
   const onClose = vi.fn();
   const onAddGroup = vi.fn();
   const onDeleteGroup = vi.fn();
+  const onSwapGroups = vi.fn();
+  const onChangeIconSize = vi.fn();
 
   const { rerender } = render(
     <SettingsPanel
@@ -39,6 +41,8 @@ function renderPanel(
       groups={groups}
       onAddGroup={onAddGroup}
       onDeleteGroup={onDeleteGroup}
+      onSwapGroups={onSwapGroups}
+      onChangeIconSize={onChangeIconSize}
     />,
   );
 
@@ -52,11 +56,21 @@ function renderPanel(
         groups={groups}
         onAddGroup={onAddGroup}
         onDeleteGroup={onDeleteGroup}
+        onSwapGroups={onSwapGroups}
+        onChangeIconSize={onChangeIconSize}
       />,
     );
   }
 
-  return { onUpdate, onClose, onAddGroup, onDeleteGroup, rerenderWith };
+  return {
+    onUpdate,
+    onClose,
+    onAddGroup,
+    onDeleteGroup,
+    onSwapGroups,
+    onChangeIconSize,
+    rerenderWith,
+  };
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────
@@ -128,7 +142,10 @@ describe("SettingsPanel — itemsPerRow stepper", () => {
   it("decrements itemsPerRow when the − stepper button is clicked", () => {
     const { onUpdate } = renderPanel({ ...DEFAULT_SETTINGS, itemsPerRow: 5 });
 
-    fireEvent.click(screen.getByText("−"));
+    // Multiple − buttons exist: per-group icon-size control(s) and the stepper.
+    // The stepper − is last.
+    const minusBtns = screen.getAllByText("−");
+    fireEvent.click(minusBtns[minusBtns.length - 1]);
 
     expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ itemsPerRow: 4 }));
   });
@@ -136,7 +153,8 @@ describe("SettingsPanel — itemsPerRow stepper", () => {
   it("clamps itemsPerRow to minimum 2 on decrement", () => {
     const { onUpdate } = renderPanel({ ...DEFAULT_SETTINGS, itemsPerRow: 2 });
 
-    fireEvent.click(screen.getByText("−"));
+    const minusBtns = screen.getAllByText("−");
+    fireEvent.click(minusBtns[minusBtns.length - 1]);
 
     expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ itemsPerRow: 2 }));
   });
@@ -192,8 +210,8 @@ describe("SettingsPanel — group management", () => {
 
   it("calls onDeleteGroup with the group id when ✕ is clicked", () => {
     const { onDeleteGroup } = renderPanel(DEFAULT_SETTINGS, [
-      { id: "g1", name: "Work" },
-      { id: "g2", name: "Personal" },
+      { id: "g1", name: "Work", miniIconSize: 16 },
+      { id: "g2", name: "Personal", miniIconSize: 16 },
     ]);
 
     fireEvent.click(screen.getByLabelText("Delete group Work"));
@@ -202,7 +220,7 @@ describe("SettingsPanel — group management", () => {
   });
 
   it("disables the delete button when only one group exists", () => {
-    renderPanel(DEFAULT_SETTINGS, [{ id: "g1", name: "Work" }]);
+    renderPanel(DEFAULT_SETTINGS, [{ id: "g1", name: "Work", miniIconSize: 16 }]);
 
     const btn = screen.getByLabelText("Delete group Work") as HTMLButtonElement;
     expect(btn.disabled).toBe(true);
@@ -210,12 +228,79 @@ describe("SettingsPanel — group management", () => {
 
   it("enables the delete button when multiple groups exist", () => {
     renderPanel(DEFAULT_SETTINGS, [
-      { id: "g1", name: "Work" },
-      { id: "g2", name: "Personal" },
+      { id: "g1", name: "Work", miniIconSize: 16 },
+      { id: "g2", name: "Personal", miniIconSize: 16 },
     ]);
 
     const btn = screen.getByLabelText("Delete group Work") as HTMLButtonElement;
     expect(btn.disabled).toBe(false);
+  });
+
+  it("calls onSwapGroups(i, i-1) when a group's move-up button is clicked", () => {
+    const { onSwapGroups } = renderPanel(DEFAULT_SETTINGS, [
+      { id: "g1", name: "Work", miniIconSize: 16 },
+      { id: "g2", name: "Personal", miniIconSize: 16 },
+    ]);
+
+    fireEvent.click(screen.getByLabelText("Move group Personal up"));
+
+    expect(onSwapGroups).toHaveBeenCalledWith(1, 0);
+  });
+
+  it("calls onSwapGroups(i, i+1) when a group's move-down button is clicked", () => {
+    const { onSwapGroups } = renderPanel(DEFAULT_SETTINGS, [
+      { id: "g1", name: "Work", miniIconSize: 16 },
+      { id: "g2", name: "Personal", miniIconSize: 16 },
+    ]);
+
+    fireEvent.click(screen.getByLabelText("Move group Work down"));
+
+    expect(onSwapGroups).toHaveBeenCalledWith(0, 1);
+  });
+
+  it("calls onChangeIconSize with a decreased size when a group's − icon-size button is clicked", () => {
+    const { onChangeIconSize } = renderPanel(DEFAULT_SETTINGS, [
+      { id: "g1", name: "Work", miniIconSize: 16 },
+    ]);
+
+    fireEvent.click(screen.getByLabelText("Decrease icon size for Work"));
+
+    expect(onChangeIconSize).toHaveBeenCalledWith("g1", 14);
+  });
+
+  it("calls onChangeIconSize with an increased size when a group's + icon-size button is clicked", () => {
+    const { onChangeIconSize } = renderPanel(DEFAULT_SETTINGS, [
+      { id: "g1", name: "Work", miniIconSize: 16 },
+    ]);
+
+    fireEvent.click(screen.getByLabelText("Increase icon size for Work"));
+
+    expect(onChangeIconSize).toHaveBeenCalledWith("g1", 18);
+  });
+
+  it("disables the icon-size − button at the minimum and + button at the maximum", () => {
+    renderPanel(DEFAULT_SETTINGS, [{ id: "g1", name: "Work", miniIconSize: 12 }]);
+    expect(
+      (screen.getByLabelText("Decrease icon size for Work") as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
+  it("disables move-up for the first group and move-down for the last group", () => {
+    renderPanel(DEFAULT_SETTINGS, [
+      { id: "g1", name: "Work", miniIconSize: 16 },
+      { id: "g2", name: "Personal", miniIconSize: 16 },
+    ]);
+
+    expect((screen.getByLabelText("Move group Work up") as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByLabelText("Move group Personal down") as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect((screen.getByLabelText("Move group Work down") as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    expect((screen.getByLabelText("Move group Personal up") as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 });
 
