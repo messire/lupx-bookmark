@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { Settings, BackgroundType, CardStyle } from "../../types";
+import { MIN_MINI_ICON_SIZE, MAX_MINI_ICON_SIZE, MINI_ICON_SIZE_STEP } from "../../types";
 import { saveBackgroundImage } from "../../newtab/useBackground";
 import { useWallpapers } from "../../newtab/useWallpapers";
 import styles from "./SettingsPanel.module.css";
@@ -7,6 +8,7 @@ import styles from "./SettingsPanel.module.css";
 interface GroupInfo {
   id: string;
   name: string;
+  miniIconSize: number;
 }
 
 interface SettingsPanelProps {
@@ -18,6 +20,7 @@ interface SettingsPanelProps {
   onAddGroup: () => void;
   onDeleteGroup: (id: string) => void;
   onSwapGroups: (idxA: number, idxB: number) => void;
+  onChangeIconSize: (groupId: string, size: number) => void;
 }
 
 const BG_TYPES: { value: BackgroundType; label: string }[] = [
@@ -66,6 +69,7 @@ export default function SettingsPanel({
   onAddGroup,
   onDeleteGroup,
   onSwapGroups,
+  onChangeIconSize,
 }: SettingsPanelProps) {
   const [oldSettings, setOldSettings] = useState<Settings | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -222,6 +226,35 @@ export default function SettingsPanel({
                   </button>
                 </div>
                 <span className={styles.groupRowName}>{g.name}</span>
+                <div className={styles.iconSizeControl} title="Mini icon size when collapsed">
+                  <button
+                    className={styles.iconSizeBtn}
+                    onClick={() =>
+                      onChangeIconSize(
+                        g.id,
+                        Math.max(MIN_MINI_ICON_SIZE, g.miniIconSize - MINI_ICON_SIZE_STEP),
+                      )
+                    }
+                    disabled={g.miniIconSize <= MIN_MINI_ICON_SIZE}
+                    aria-label={`Decrease icon size for ${g.name}`}
+                  >
+                    &minus;
+                  </button>
+                  <span className={styles.iconSizeValue}>{g.miniIconSize}px</span>
+                  <button
+                    className={styles.iconSizeBtn}
+                    onClick={() =>
+                      onChangeIconSize(
+                        g.id,
+                        Math.min(MAX_MINI_ICON_SIZE, g.miniIconSize + MINI_ICON_SIZE_STEP),
+                      )
+                    }
+                    disabled={g.miniIconSize >= MAX_MINI_ICON_SIZE}
+                    aria-label={`Increase icon size for ${g.name}`}
+                  >
+                    +
+                  </button>
+                </div>
                 <button
                   className={styles.groupDeleteBtn}
                   onClick={() => onDeleteGroup(g.id)}

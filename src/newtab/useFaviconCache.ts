@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { fetchChromeFavicon, getFaviconFallbackUrl } from "../utils/favicon";
+import { fetchChromeFavicon, getFaviconFallbackUrl, getDirectFaviconUrls } from "../utils/favicon";
 
 const CACHE_KEY = "faviconCache_v1";
 
@@ -30,13 +30,18 @@ function probeImage(src: string, timeoutMs = 5000): Promise<boolean> {
  * Returns "" if none work.
  */
 async function resolveUrl(bookmarkUrl: string): Promise<string> {
-  // 1. Chrome internal cache (fetch -> blob URL; chrome:// cannot be used as <img src>)
-  const chromeBlobUrl = await fetchChromeFavicon(bookmarkUrl, 32);
-  if (chromeBlobUrl) return chromeBlobUrl;
-
-  // 2. Google S2
+  // 1. Google S2
   const s2Url = getFaviconFallbackUrl(bookmarkUrl, 32);
   if (s2Url && (await probeImage(s2Url))) return s2Url;
+
+  // 2. Direct favicon.ico / favicon.png from the site's own origin
+  for (const directUrl of getDirectFaviconUrls(bookmarkUrl)) {
+    if (await probeImage(directUrl)) return directUrl;
+  }
+
+  // 3. Chrome internal cache (fetch -> blob URL; chrome:// cannot be used as <img src>)
+  const chromeBlobUrl = await fetchChromeFavicon(bookmarkUrl, 32);
+  if (chromeBlobUrl) return chromeBlobUrl;
 
   return "";
 }
@@ -63,6 +68,7 @@ function loadStoredCache(): Promise<FaviconCache> {
  */
 export function useFaviconCache(bookmarkUrls: string[]): {
   getFavicon: (url: string) => string | undefined;
+  retryFavicon: (url: string) => void;
 } {
   const [cache, setCache] = useState<FaviconCache>({});
   const probingRef = useRef(false);
@@ -121,5 +127,36 @@ export function useFaviconCache(bookmarkUrls: string[]): {
     [cache],
   );
 
-  return { getFavicon };
+  /**
+   * Invalidates a previously-failed ("") favicon lookup for a URL.
+   *
+   * Called right before navigating to a bookmark: if the icon never resolved,
+   * clearing the cache entry makes the current render fall back to the live
+   * probing chain (BookmarkCard / MiniIcon already do this for any URL missing
+   * from the cache), and makes the *next* page load retry it from scratch --
+   * useful because the site visit that follows this click often teaches Chrome
+   * the real favicon, or a favicon service that failed transiently may have
+   * since recovered.
+   *
+   * No-op if the URL isn't cached yet or previously resolved successfully --
+   * this is a retry for stuck failures, not a refresh on every click.
+   */
+  const retryFavicon = useCallback((url: string) => {
+    setCache((prev) => {
+      if (prev[url] !== "") return prev;
+      const next = { ...prev };
+      delete next[url];
+      return next;
+    });
+
+    chrome.storage.local.get(CACHE_KEY, (result) => {
+      const stored = (result[CACHE_KEY] as FaviconCache) ?? {};
+      if (stored[url] !== "") return;
+      const next = { ...stored };
+      delete next[url];
+      chrome.storage.local.set({ [CACHE_KEY]: next });
+    });
+  }, []);
+
+  return { getFavicon, retryFavicon };
 }

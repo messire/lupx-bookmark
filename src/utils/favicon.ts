@@ -1,10 +1,11 @@
 /**
  * Favicon URL helpers.
  *
- * Chain used in BookmarkCard / MiniIcon:
- *   1. chrome://favicon2/  - Chrome internal cache (fast, works offline)
- *   2. Google S2            - widely used fallback
- *   3. pin.svg              - final fallback
+ * Chain used in BookmarkCard / MiniIcon / useFaviconCache:
+ *   1. Google S2            - widely used third-party favicon service, usually fast and reliable
+ *   2. Direct favicon.ico/.png - fetched straight from the site's own origin
+ *   3. chrome://favicon2/   - Chrome internal cache (cache-only; not usable as a live <img src>)
+ *   4. pin.svg              - final fallback
  */
 
 /**
@@ -50,12 +51,26 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-/** Second: Google S2 favicon service. */
+/** First: Google S2 favicon service. */
 export function getFaviconFallbackUrl(pageUrl: string, size: 16 | 32 | 64 = 32): string {
   try {
     const origin = new URL(pageUrl).origin;
     return "https://www.google.com/s2/favicons?domain=" + origin + "&sz=" + size;
   } catch {
     return "";
+  }
+}
+
+/**
+ * Second: try the site's own favicon files directly (well-known paths).
+ * Order returned is the probing order: .ico first, then .png.
+ * Not affected by third-party favicon-lookup services being down, rate-limited, or wrong.
+ */
+export function getDirectFaviconUrls(pageUrl: string): string[] {
+  try {
+    const origin = new URL(pageUrl).origin;
+    return [origin + "/favicon.ico", origin + "/favicon.png"];
+  } catch {
+    return [];
   }
 }

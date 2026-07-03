@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import BookmarkCard from "../BookmarkCard/BookmarkCard";
-import { getFaviconFallbackUrl } from "../../utils/favicon";
+import { getFaviconFallbackUrl, getDirectFaviconUrls } from "../../utils/favicon";
 import { useFaviconContext } from "../../newtab/FaviconCacheContext";
 import type { AccordionGroup as AccordionGroupType, CardStyle, SpeedDialSlot } from "../../types";
 import { MAX_ITEMS_PER_ACCORDION } from "../../types";
@@ -13,6 +13,11 @@ const PIN_ICON = chrome.runtime.getURL("icons/pin.svg");
 
 // Empty slot sentinel used for the "add" card
 const EMPTY_SLOT: SpeedDialSlot = { id: "__add__", url: null, title: null };
+
+/** Header height when the group is expanded (or collapsed with default-size icons). */
+const DEFAULT_HEADER_HEIGHT = 44;
+/** Breathing room kept above/below the mini icon row when the header grows. */
+const HEADER_VERTICAL_PADDING = 8;
 
 // Maps card style to extra CSS class on the accordion container
 const ACCORDION_STYLE_CLASS: Record<CardStyle, string> = {
@@ -106,12 +111,21 @@ export default function AccordionGroup({
 
   const groupClass = [styles.accordion, ACCORDION_STYLE_CLASS[cardStyle]].filter(Boolean).join(" ");
 
+  // When collapsed, the header must grow with the mini icon size so the icons
+  // keep consistent breathing room instead of just overflowing a fixed-height row.
+  // DEFAULT_HEADER_HEIGHT / HEADER_VERTICAL_PADDING mirror the values baked into
+  // AccordionGroup.module.css's .header rule.
+  const miniLinkBoxSize = group.miniIconSize + 6; // matches MiniIcon's linkBoxSize below
+  const headerHeight = group.collapsed
+    ? Math.max(DEFAULT_HEADER_HEIGHT, miniLinkBoxSize + HEADER_VERTICAL_PADDING * 2)
+    : undefined;
+
   // -- Render --
 
   return (
     <div className={groupClass}>
       {/* -- Header -- */}
-      <div className={styles.header}>
+      <div className={styles.header} style={headerHeight ? { height: headerHeight } : undefined}>
         {/* Collapse toggle */}
         <button
           className={styles.toggleBtn}
@@ -156,7 +170,7 @@ export default function AccordionGroup({
             {filledItems
               .filter((i): i is FilledSlot => i.url !== null)
               .map((item) => (
-                <MiniIcon key={item.id} item={item} />
+                <MiniIcon key={item.id} item={item} size={group.miniIconSize} />
               ))}
           </div>
         )}
@@ -211,40 +225,58 @@ export default function AccordionGroup({
 
 // -- Mini favicon (16x16) for collapsed state --
 
-type MiniStage = "google" | "pin";
+type MiniStage = "google" | "direct-ico" | "direct-png" | "pin";
 
-function MiniIcon({ item }: { item: FilledSlot }) {
-  const getFavicon = useFaviconContext();
+/** Rounds an arbitrary mini icon size to a size bucket the favicon services support. */
+function faviconSizeBucket(size: number): 16 | 32 | 64 {
+  if (size <= 16) return 16;
+  if (size <= 32) return 32;
+  return 64;
+}
+
+function MiniIcon({ item, size }: { item: FilledSlot; size: number }) {
+  const { getFavicon, retryFavicon } = useFaviconContext();
   const [stage, setStage] = useState<MiniStage>("google");
 
   const cached = getFavicon(item.url); // undefined=probing, ""=none, "url"=use it
+  const linkBoxSize = size + 6;
 
   function getSrc(): string {
     if (cached !== undefined) return cached || PIN_ICON;
-    if (stage === "google") return getFaviconFallbackUrl(item.url, 16) || PIN_ICON;
+    // Cache not yet populated: Google S2 -> direct favicon.ico -> direct favicon.png -> pin
+    if (stage === "google")
+      return getFaviconFallbackUrl(item.url, faviconSizeBucket(size)) || PIN_ICON;
+    if (stage === "direct-ico") return getDirectFaviconUrls(item.url)[0] || PIN_ICON;
+    if (stage === "direct-png") return getDirectFaviconUrls(item.url)[1] || PIN_ICON;
     return PIN_ICON;
   }
 
   function handleError() {
     if (cached !== undefined) return;
-    if (stage === "google") setStage("pin");
+    if (stage === "google") setStage("direct-ico");
+    else if (stage === "direct-ico") setStage("direct-png");
+    else if (stage === "direct-png") setStage("pin");
   }
 
   return (
     <a
       href={item.url}
       className={styles.miniIconLink}
+      style={{ width: linkBoxSize, height: linkBoxSize }}
       title={item.title ?? item.url}
       onClick={(e) => {
         e.preventDefault();
+        // Icon never resolved (cached as "") -- retry now that the user is
+        // actually visiting the site.
+        if (cached === "") retryFavicon(item.url);
         window.location.href = item.url;
       }}
     >
       <img
         src={getSrc()}
         alt=""
-        width={16}
-        height={16}
+        width={size}
+        height={size}
         className={styles.miniIconImg}
         onError={handleError}
       />

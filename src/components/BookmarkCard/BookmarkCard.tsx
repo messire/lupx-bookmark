@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { getFaviconFallbackUrl } from "../../utils/favicon";
+import { getFaviconFallbackUrl, getDirectFaviconUrls } from "../../utils/favicon";
 import { useFaviconContext } from "../../newtab/FaviconCacheContext";
 import type { SpeedDialSlot, CardStyle } from "../../types";
 import styles from "./BookmarkCard.module.css";
@@ -20,9 +20,10 @@ const STYLE_CLASS: Record<CardStyle, string> = {
 
 // Live fallback chain (used while cache is being populated):
 // chrome://favicon2/ is handled via fetch() in useFaviconCache -- NOT usable as <img src>
-//   1. Google S2  - widely known fallback
-//   2. pin.svg    - final fallback
-type FaviconStage = "google" | "pin";
+//   1. Google S2       - widely known fallback
+//   2. direct favicon.ico / favicon.png - straight from the site's own origin
+//   3. pin.svg         - final fallback
+type FaviconStage = "google" | "direct-ico" | "direct-png" | "pin";
 
 interface BookmarkCardProps {
   slot: SpeedDialSlot;
@@ -49,7 +50,7 @@ export default function BookmarkCard({
   onRemove,
   onRename,
 }: BookmarkCardProps) {
-  const getFavicon = useFaviconContext();
+  const { getFavicon, retryFavicon } = useFaviconContext();
 
   const [faviconStage, setFaviconStage] = useState<FaviconStage>("google");
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -83,23 +84,30 @@ export default function BookmarkCard({
     if (cachedFavicon !== undefined) {
       return cachedFavicon || PIN_ICON;
     }
-    // Cache not yet populated: Google S2 -> pin
+    // Cache not yet populated: Google S2 -> direct favicon.ico -> direct favicon.png -> pin
     if (faviconStage === "google") return getFaviconFallbackUrl(url, 64) || PIN_ICON;
+    if (faviconStage === "direct-ico") return getDirectFaviconUrls(url)[0] || PIN_ICON;
+    if (faviconStage === "direct-png") return getDirectFaviconUrls(url)[1] || PIN_ICON;
     return PIN_ICON;
   }
 
   function handleImgLoad(_e: React.SyntheticEvent<HTMLImageElement>) {
-    // No-op: Google S2 returns proper icons or triggers onError
+    // No-op: a working stage loads normally; a broken one triggers onError instead
   }
 
   function handleImgError() {
     if (cachedFavicon !== undefined) return;
-    if (faviconStage === "google") setFaviconStage("pin");
+    if (faviconStage === "google") setFaviconStage("direct-ico");
+    else if (faviconStage === "direct-ico") setFaviconStage("direct-png");
+    else if (faviconStage === "direct-png") setFaviconStage("pin");
   }
 
   function handleClick(e: React.MouseEvent) {
     if (confirmDelete || editing) return;
     e.preventDefault();
+    // Icon never resolved (cached as "") -- retry now that the user is actually
+    // visiting the site; the visit itself often teaches Chrome the real favicon.
+    if (cachedFavicon === "") retryFavicon(url);
     window.location.href = url;
   }
 
@@ -192,7 +200,10 @@ export default function BookmarkCard({
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commitEdit}
             onKeyDown={handleEditKeyDown}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           />
         </div>
       ) : (

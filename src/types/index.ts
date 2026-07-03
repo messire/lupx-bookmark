@@ -11,7 +11,15 @@ export interface AccordionGroup {
   name: string;
   collapsed: boolean;
   items: SpeedDialSlot[];
+  /** Size (px) of each mini favicon shown when this group is collapsed. */
+  miniIconSize: number;
 }
+
+/** Bounds and default for the per-group collapsed mini-icon size control. */
+export const MIN_MINI_ICON_SIZE = 12;
+export const MAX_MINI_ICON_SIZE = 32;
+export const MINI_ICON_SIZE_STEP = 2;
+export const DEFAULT_MINI_ICON_SIZE = 16;
 
 // A history suggestion shown while the user types in AddSlotModal
 export interface HistorySuggestion {

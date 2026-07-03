@@ -66,6 +66,7 @@ function App() {
     renameItem,
     renameGroup,
     toggleCollapse,
+    setIconSize,
   } = useAccordions();
   const cardWidth = useCardWidth(settings.itemsPerRow);
 
@@ -89,7 +90,7 @@ function App() {
     () => groups.flatMap((g) => g.items.flatMap((i) => (i.url ? [i.url] : []))),
     [groups],
   );
-  const { getFavicon } = useFaviconCache(allBookmarkUrls);
+  const { getFavicon, retryFavicon } = useFaviconCache(allBookmarkUrls);
 
   // -- Drag handlers --
 
@@ -181,7 +182,7 @@ function App() {
   // -- Render --
 
   return (
-    <FaviconCacheContext.Provider value={getFavicon}>
+    <FaviconCacheContext.Provider value={{ getFavicon, retryFavicon }}>
       <div className={styles.page} onDragEnd={handleDragEnd}>
         <div className={styles.searchBarRow}>
           <SearchBar
@@ -236,10 +237,11 @@ function App() {
           settings={settings}
           onUpdate={updateSettings}
           onClose={() => setSettingsOpen(false)}
-          groups={groups.map((g) => ({ id: g.id, name: g.name }))}
+          groups={groups.map((g) => ({ id: g.id, name: g.name, miniIconSize: g.miniIconSize }))}
           onAddGroup={handleAddGroup}
           onDeleteGroup={handleDeleteGroup}
           onSwapGroups={handleSwapGroups}
+          onChangeIconSize={setIconSize}
         />
 
         {addingToGroup !== null && (

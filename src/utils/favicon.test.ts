@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getFaviconFallbackUrl } from "./favicon";
+import { getFaviconFallbackUrl, getDirectFaviconUrls } from "./favicon";
 
 const S2 = "https://www.google.com/s2/favicons";
 
@@ -25,5 +25,21 @@ describe("getFaviconFallbackUrl (Google S2)", () => {
   it("handles http (non-https) URLs", () => {
     const result = getFaviconFallbackUrl("http://example.com/page");
     expect(result).toBe(S2 + "?domain=http://example.com&sz=32");
+  });
+});
+
+describe("getDirectFaviconUrls", () => {
+  it("returns favicon.ico then favicon.png at the page's origin", () => {
+    const result = getDirectFaviconUrls("https://example.com/some/page?q=1");
+    expect(result).toEqual(["https://example.com/favicon.ico", "https://example.com/favicon.png"]);
+  });
+
+  it("strips the path - uses origin only", () => {
+    const result = getDirectFaviconUrls("https://github.com/user/repo");
+    expect(result).toEqual(["https://github.com/favicon.ico", "https://github.com/favicon.png"]);
+  });
+
+  it("returns an empty array for an invalid URL", () => {
+    expect(getDirectFaviconUrls("not-a-url")).toEqual([]);
   });
 });

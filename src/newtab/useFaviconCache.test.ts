@@ -131,18 +131,7 @@ describe("useFaviconCache — initial load", () => {
 });
 
 describe("useFaviconCache — probing", () => {
-  it("resolves chrome://favicon2/ first when it returns a hit", async () => {
-    mockProbe("favicon2", "hit");
-
-    const { result } = await mount(["https://example.com"]);
-
-    await waitFor(() => result.current.getFavicon("https://example.com") !== undefined);
-
-    expect(result.current.getFavicon("https://example.com")).toMatch(/^data:/);
-  });
-
-  it("falls back to Google S2 when chrome favicon misses", async () => {
-    mockProbe("favicon2", "miss");
+  it("resolves Google S2 first when it returns a hit", async () => {
     mockProbe("google.com/s2", "hit");
 
     const { result } = await mount(["https://example.com"]);
@@ -152,9 +141,47 @@ describe("useFaviconCache — probing", () => {
     expect(result.current.getFavicon("https://example.com")).toContain("google.com/s2");
   });
 
+  it("falls back to direct favicon.ico when Google S2 misses", async () => {
+    mockProbe("google.com/s2", "miss");
+    mockProbe("favicon.ico", "hit");
+
+    const { result } = await mount(["https://example.com"]);
+
+    await waitFor(() => result.current.getFavicon("https://example.com") !== undefined);
+
+    expect(result.current.getFavicon("https://example.com")).toContain("favicon.ico");
+  });
+
+  it("falls back to direct favicon.png when favicon.ico misses too", async () => {
+    mockProbe("google.com/s2", "miss");
+    mockProbe("favicon.ico", "miss");
+    mockProbe("favicon.png", "hit");
+
+    const { result } = await mount(["https://example.com"]);
+
+    await waitFor(() => result.current.getFavicon("https://example.com") !== undefined);
+
+    expect(result.current.getFavicon("https://example.com")).toContain("favicon.png");
+  });
+
+  it("falls back to chrome://favicon2/ when Google S2 and direct favicon all miss", async () => {
+    mockProbe("google.com/s2", "miss");
+    mockProbe("favicon.ico", "miss");
+    mockProbe("favicon.png", "miss");
+    mockProbe("favicon2", "hit");
+
+    const { result } = await mount(["https://example.com"]);
+
+    await waitFor(() => result.current.getFavicon("https://example.com") !== undefined);
+
+    expect(result.current.getFavicon("https://example.com")).toMatch(/^data:/);
+  });
+
   it("stores empty string when all probes miss", async () => {
     mockProbe("favicon2", "miss");
     mockProbe("google.com/s2", "miss");
+    mockProbe("favicon.ico", "miss");
+    mockProbe("favicon.png", "miss");
 
     const { result } = await mount(["https://nofavicon.example.com"]);
 
@@ -212,5 +239,79 @@ describe("useFaviconCache — getFavicon return values", () => {
     expect(result.current.getFavicon("https://example.com")).toBe(
       "https://cdn.example.com/fav.ico",
     );
+  });
+});
+
+describe("useFaviconCache — retryFavicon", () => {
+  it("clears a previously-failed (empty) cache entry so it can be retried", async () => {
+    seedStorage("local", {
+      [CACHE_KEY]: { "https://broken.example.com": "" },
+    });
+
+    const { result } = await mount(["https://broken.example.com"]);
+
+    await waitFor(() => result.current.getFavicon("https://broken.example.com") !== undefined);
+    expect(result.current.getFavicon("https://broken.example.com")).toBe("");
+
+    act(() => {
+      result.current.retryFavicon("https://broken.example.com");
+    });
+
+    await waitFor(() => result.current.getFavicon("https://broken.example.com") === undefined);
+  });
+
+  it("removes the cleared entry from chrome.storage.local without touching other entries", async () => {
+    seedStorage("local", {
+      [CACHE_KEY]: {
+        "https://broken.example.com": "",
+        "https://ok.example.com": "https://cdn.example.com/fav.ico",
+      },
+    });
+
+    const { result } = await mount(["https://broken.example.com", "https://ok.example.com"]);
+    await waitFor(() => result.current.getFavicon("https://broken.example.com") !== undefined);
+
+    act(() => {
+      result.current.retryFavicon("https://broken.example.com");
+    });
+
+    await waitFor(() => {
+      const calls = (chrome.storage.local.set as ReturnType<typeof vi.fn>).mock.calls;
+      return calls.some(([arg]) => {
+        const stored = (arg as Record<string, Record<string, string>>)[CACHE_KEY];
+        return (
+          stored !== undefined &&
+          !("https://broken.example.com" in stored) &&
+          stored["https://ok.example.com"] === "https://cdn.example.com/fav.ico"
+        );
+      });
+    });
+  });
+
+  it("is a no-op for a URL that already resolved successfully", async () => {
+    seedStorage("local", {
+      [CACHE_KEY]: { "https://ok.example.com": "https://cdn.example.com/fav.ico" },
+    });
+
+    const { result } = await mount(["https://ok.example.com"]);
+    await waitFor(() => result.current.getFavicon("https://ok.example.com") !== undefined);
+
+    act(() => {
+      result.current.retryFavicon("https://ok.example.com");
+    });
+
+    expect(result.current.getFavicon("https://ok.example.com")).toBe(
+      "https://cdn.example.com/fav.ico",
+    );
+  });
+
+  it("is a no-op for a URL not yet in the cache", async () => {
+    const { result } = await mount([]);
+
+    act(() => {
+      result.current.retryFavicon("https://unknown.example.com");
+    });
+
+    expect(result.current.getFavicon("https://unknown.example.com")).toBeUndefined();
   });
 });
