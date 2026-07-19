@@ -62,6 +62,11 @@ export const MAX_ITEMS_PER_ACCORDION = 16;
 /** Bump this when the Settings schema changes in a breaking way. */
 export const SETTINGS_VERSION = 1;
 
+/** Bounds and default for the group grid column count control. */
+export const MIN_GROUP_COLUMNS = 1;
+export const MAX_GROUP_COLUMNS = 4;
+export const DEFAULT_GROUP_COLUMNS = 1;
+
 // User-facing settings stored in chrome.storage.local
 export interface Settings {
   itemsPerRow: number; // bookmark cards per row (default: 5)
@@ -70,6 +75,7 @@ export interface Settings {
   background: Background;
   cardStyle: CardStyle;
   searchEngine: SearchEngine;
+  groupColumns: number; // number of columns groups are arranged in (default: 1, max: 4)
 }
 
 export const DEFAULT_BACKGROUND: Background = {
@@ -86,4 +92,5 @@ export const DEFAULT_SETTINGS: Settings = {
   background: DEFAULT_BACKGROUND,
   cardStyle: "minimal",
   searchEngine: "google",
+  groupColumns: DEFAULT_GROUP_COLUMNS,
 };

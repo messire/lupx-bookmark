@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { Settings, BackgroundType, CardStyle } from "../../types";
-import { MIN_MINI_ICON_SIZE, MAX_MINI_ICON_SIZE, MINI_ICON_SIZE_STEP } from "../../types";
+import {
+  MIN_MINI_ICON_SIZE,
+  MAX_MINI_ICON_SIZE,
+  MINI_ICON_SIZE_STEP,
+  MIN_GROUP_COLUMNS,
+  MAX_GROUP_COLUMNS,
+} from "../../types";
 import { saveBackgroundImage } from "../../newtab/useBackground";
 import { useWallpapers } from "../../newtab/useWallpapers";
 import styles from "./SettingsPanel.module.css";
@@ -289,6 +295,35 @@ export default function SettingsPanel({
               ))}
 
               <div className={styles.field}>
+                <span className={styles.label}>Group columns</span>
+                <div className={styles.stepper}>
+                  <button
+                    className={styles.stepBtn}
+                    onClick={() =>
+                      handleUpdate({
+                        groupColumns: Math.max(MIN_GROUP_COLUMNS, settings.groupColumns - 1),
+                      })
+                    }
+                    disabled={settings.groupColumns <= MIN_GROUP_COLUMNS}
+                  >
+                    &minus;
+                  </button>
+                  <span className={styles.stepValue}>{settings.groupColumns}</span>
+                  <button
+                    className={styles.stepBtn}
+                    onClick={() =>
+                      handleUpdate({
+                        groupColumns: Math.min(MAX_GROUP_COLUMNS, settings.groupColumns + 1),
+                      })
+                    }
+                    disabled={settings.groupColumns >= MAX_GROUP_COLUMNS}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.field}>
                 <span className={styles.label}>Items per row</span>
                 <div className={styles.stepper}>
                   <button
@@ -311,7 +346,7 @@ export default function SettingsPanel({
                 </div>
               </div>
 
-              <div className={styles.hint}>Max 16 items per group</div>
+              <div className={styles.hint}>Max 16 items per group &middot; Max 4 group columns</div>
             </section>
           )}
 
