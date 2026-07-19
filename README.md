@@ -19,11 +19,12 @@ single-purpose extension that does exactly one thing and stays out of your way.
 ## Features
 
 - **Bookmark grid** — cards with favicons in configurable columns (2–10 per row)
-- **Accordion groups** — unlimited named groups (minimum 1), individually collapsible, each with an adjustable mini-icon size (12–32 px) shown when collapsed
+- **Accordion groups** — unlimited named groups (minimum 1), individually collapsible, each with an adjustable mini-icon size (12–32 px) shown when collapsed; groups themselves are arranged in 1–4 columns (configurable in Settings)
 - **Drag & drop** — reorder cards within a group or move cards between groups by dragging (always active); group order itself is changed via up/down buttons in the Settings panel, not drag-and-drop
+- **Edit bookmarks** — click a card's edit action to open a modal and change its title or URL in place
 - **9 card styles** — Minimal · Glass · Bento · Icons · Neon Pink · Neon Cyan · Soft UI · Stamp · Aurora
 - **Custom background** — solid color, linear gradient, image URL, or local file upload; built-in wallpaper gallery; text color adapts automatically based on background luminance
-- **Search bar** — Google, Yandex, or DuckDuckGo (choice persisted); search on Enter or button click
+- **Search bar** — Google, Yandex, or DuckDuckGo (choice persisted); search on Enter or button click; an empty query navigates to the selected engine's home page instead of searching
 - **Theme** — Light / Dark / System (follows OS preference)
 - **History autocomplete** — Add-bookmark modal suggests pages from your browsing history as you type
 - **Favicon caching** — resolved favicons (`chrome://favicon2/` → Google S2 → pin placeholder) are persisted to `chrome.storage.local` so cards render instantly on repeat visits
@@ -143,6 +144,7 @@ lupx-bookmark/
 │   │   ├── AccordionGroup/   # Collapsible group with drag handles
 │   │   ├── BookmarkCard/     # Individual bookmark card (all 9 style variants)
 │   │   ├── AddSlotModal/     # Add-bookmark dialog with history suggestions
+│   │   ├── EditItemModal/    # Edit an existing bookmark's title/URL
 │   │   ├── SearchBar/        # Search bar with engine picker
 │   │   ├── SettingsPanel/    # Slide-in settings drawer (Style / Items / Backup tabs, rollback)
 │   │   └── ErrorBoundary/    # Top-level render-error recovery UI
@@ -176,6 +178,8 @@ All logic runs inside the New Tab page. There is no background service worker.
 - **Cross-tab sync** — `useSettings`, `useAccordions`, and `useBackground` each scope a `chrome.storage.onChanged` listener to their own storage key, so unrelated writes never bleed into unrelated
   state.
 - **Drag & drop** — item drag state is lifted to `newtab.tsx` so cross-group drops work without prop-drilling callbacks through multiple levels. Group _order_, by contrast, is not drag-based — it's changed via up/down buttons in `SettingsPanel` that call `swapGroups`.
+- **Group columns** — `settings.groupColumns` (1–4, default 1) controls how many columns accordion groups are arranged into on the New Tab page; adjustable from the Settings panel's Items tab.
+- **Edit bookmarks** (`EditItemModal`) — `BookmarkCard` renders an edit action that opens the modal; `onEditItem` is threaded through `AccordionGroup` up to `newtab.tsx`, which persists the change via `useAccordions`.
 - **Settings panel width** — kept in `localStorage` (not `chrome.storage`), since it's a local UI preference that doesn't need cross-tab sync or backup.
 - **Card styles** — implemented as CSS Module class variants on `BookmarkCard` and `AccordionGroup`; the active style is passed as a prop from settings, never read from DOM.
 - **No `chrome.bookmarks` API** — despite the name, bookmark cards are app-managed "slots," not entries in the browser's native bookmark tree.
