@@ -27,6 +27,8 @@ interface SettingsPanelProps {
   onDeleteGroup: (id: string) => void;
   onSwapGroups: (idxA: number, idxB: number) => void;
   onChangeIconSize: (groupId: string, size: number) => void;
+  onExportBackup: () => void;
+  onImportBackup: (file: File, mode: "merge" | "replace") => Promise<void>;
 }
 
 const BG_TYPES: { value: BackgroundType; label: string }[] = [
@@ -76,11 +78,51 @@ export default function SettingsPanel({
   onDeleteGroup,
   onSwapGroups,
   onChangeIconSize,
+  onExportBackup,
+  onImportBackup,
 }: SettingsPanelProps) {
   const [oldSettings, setOldSettings] = useState<Settings | null>(null);
-  const [activeTab, setActiveTab] = useState<"style" | "items">("style");
+  const [activeTab, setActiveTab] = useState<"style" | "items" | "backup">("style");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const wallpapers = useWallpapers();
+
+  // ── Import / export ─────────────────────────────────────────────────────
+  const importFileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
+  const [importBusy, setImportBusy] = useState(false);
+  const [importStatus, setImportStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  function handleImportFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImportStatus(null);
+    setPendingImportFile(file);
+  }
+
+  function handleCancelImport() {
+    setPendingImportFile(null);
+  }
+
+  async function handleImportChoice(mode: "merge" | "replace") {
+    if (!pendingImportFile) return;
+    setImportBusy(true);
+    try {
+      await onImportBackup(pendingImportFile, mode);
+      setImportStatus({ type: "success", message: "Import complete." });
+    } catch (err) {
+      setImportStatus({
+        type: "error",
+        message: err instanceof Error ? err.message : "Import failed.",
+      });
+    } finally {
+      setImportBusy(false);
+      setPendingImportFile(null);
+    }
+  }
 
   // ── Panel resize ────────────────────────────────────────────────────────
   const [panelWidth, setPanelWidth] = useState<number>(loadWidth);
@@ -215,6 +257,14 @@ export default function SettingsPanel({
             aria-selected={activeTab === "items"}
           >
             Items
+          </button>
+          <button
+            role="tab"
+            className={`${styles.tabBtn} ${activeTab === "backup" ? styles.tabActive : ""}`}
+            onClick={() => setActiveTab("backup")}
+            aria-selected={activeTab === "backup"}
+          >
+            Backup
           </button>
         </div>
 
@@ -517,6 +567,88 @@ export default function SettingsPanel({
                     </div>
                   </>
                 )}
+              </section>
+            </>
+          )}
+
+          {/* Backup */}
+          {activeTab === "backup" && (
+            <>
+              <section className={styles.section}>
+                <h3 className={styles.sectionTitle}>Export</h3>
+                <div className={styles.field}>
+                  <span className={styles.label}>Save settings and bookmarks to a file</span>
+                  <button className={styles.uploadBtn} onClick={onExportBackup}>
+                    Export
+                  </button>
+                </div>
+              </section>
+
+              <section className={styles.section}>
+                <h3 className={styles.sectionTitle}>Import</h3>
+                <div className={styles.field}>
+                  <span className={styles.label}>Restore from a backup file</span>
+                  <button
+                    className={styles.uploadBtn}
+                    onClick={() => importFileInputRef.current?.click()}
+                  >
+                    Choose file
+                  </button>
+                  <input
+                    ref={importFileInputRef}
+                    type="file"
+                    accept="application/json"
+                    className={styles.hiddenInput}
+                    onChange={handleImportFileChange}
+                  />
+                </div>
+
+                {pendingImportFile && (
+                  <div className={styles.importConfirm}>
+                    <p className={styles.importConfirmText}>
+                      Import &ldquo;{pendingImportFile.name}&rdquo; &mdash; merge with your current
+                      settings and bookmarks, or replace them entirely?
+                    </p>
+                    <div className={styles.importConfirmActions}>
+                      <button
+                        className={styles.uploadBtn}
+                        onClick={() => handleImportChoice("merge")}
+                        disabled={importBusy}
+                      >
+                        Merge
+                      </button>
+                      <button
+                        className={styles.dangerBtn}
+                        onClick={() => handleImportChoice("replace")}
+                        disabled={importBusy}
+                      >
+                        Replace
+                      </button>
+                      <button
+                        className={styles.rollbackBtn}
+                        onClick={handleCancelImport}
+                        disabled={importBusy}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {importStatus && (
+                  <div
+                    className={
+                      importStatus.type === "error" ? styles.importError : styles.importSuccess
+                    }
+                  >
+                    {importStatus.message}
+                  </div>
+                )}
+
+                <div className={styles.hint}>
+                  Merging keeps your current items and adds new ones &middot; Replacing overwrites
+                  everything
+                </div>
               </section>
             </>
           )}

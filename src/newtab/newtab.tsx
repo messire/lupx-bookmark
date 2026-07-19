@@ -11,6 +11,7 @@ import AddSlotModal from "../components/AddSlotModal/AddSlotModal";
 import SettingsPanel from "../components/SettingsPanel/SettingsPanel";
 import SearchBar from "../components/SearchBar/SearchBar";
 import type { SearchEngine } from "../types";
+import { downloadBackup, parseBackupFile, mergeSettings } from "../utils/backup";
 import styles from "./newtab.module.css";
 
 // -- Card size --
@@ -67,6 +68,7 @@ function App() {
     renameGroup,
     toggleCollapse,
     setIconSize,
+    importGroups,
   } = useAccordions();
   const cardWidth = useCardWidth(settings.itemsPerRow, settings.groupColumns);
 
@@ -179,6 +181,21 @@ function App() {
     [updateSettings],
   );
 
+  // -- Backup (import/export) --
+
+  const handleExportBackup = useCallback(() => {
+    downloadBackup(settings, groups);
+  }, [settings, groups]);
+
+  const handleImportBackup = useCallback(
+    async (file: File, mode: "merge" | "replace") => {
+      const data = await parseBackupFile(file);
+      updateSettings(mode === "replace" ? data.settings : mergeSettings(settings, data.settings));
+      await importGroups(data.groups, mode);
+    },
+    [settings, updateSettings, importGroups],
+  );
+
   // -- Render --
 
   return (
@@ -247,6 +264,8 @@ function App() {
           onDeleteGroup={handleDeleteGroup}
           onSwapGroups={handleSwapGroups}
           onChangeIconSize={setIconSize}
+          onExportBackup={handleExportBackup}
+          onImportBackup={handleImportBackup}
         />
 
         {addingToGroup !== null && (

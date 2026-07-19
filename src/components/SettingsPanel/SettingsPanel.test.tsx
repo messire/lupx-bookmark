@@ -31,6 +31,8 @@ function renderPanel(
   const onDeleteGroup = vi.fn();
   const onSwapGroups = vi.fn();
   const onChangeIconSize = vi.fn();
+  const onExportBackup = vi.fn();
+  const onImportBackup = vi.fn().mockResolvedValue(undefined);
 
   const { rerender } = render(
     <SettingsPanel
@@ -43,6 +45,8 @@ function renderPanel(
       onDeleteGroup={onDeleteGroup}
       onSwapGroups={onSwapGroups}
       onChangeIconSize={onChangeIconSize}
+      onExportBackup={onExportBackup}
+      onImportBackup={onImportBackup}
     />,
   );
 
@@ -58,6 +62,8 @@ function renderPanel(
         onDeleteGroup={onDeleteGroup}
         onSwapGroups={onSwapGroups}
         onChangeIconSize={onChangeIconSize}
+        onExportBackup={onExportBackup}
+        onImportBackup={onImportBackup}
       />,
     );
   }
@@ -69,6 +75,8 @@ function renderPanel(
     onDeleteGroup,
     onSwapGroups,
     onChangeIconSize,
+    onExportBackup,
+    onImportBackup,
     rerenderWith,
   };
 }
@@ -342,5 +350,66 @@ describe("SettingsPanel — rollback", () => {
     fireEvent.click(screen.getByText("Rollback"));
 
     expect(onUpdate).toHaveBeenLastCalledWith(expect.objectContaining({ theme: "light" }));
+  });
+});
+
+describe("SettingsPanel — backup (import/export)", () => {
+  it("calls onExportBackup when the Export button is clicked", () => {
+    const { onExportBackup } = renderPanel();
+    fireEvent.click(screen.getByText("Backup"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Export" }));
+
+    expect(onExportBackup).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a merge/replace prompt after a file is chosen", () => {
+    renderPanel();
+    fireEvent.click(screen.getByText("Backup"));
+
+    const file = new File(["{}"], "backup.json", { type: "application/json" });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(screen.getByText(/backup\.json/)).toBeTruthy();
+    expect(screen.getByText("Merge")).toBeTruthy();
+    expect(screen.getByText("Replace")).toBeTruthy();
+  });
+
+  it("calls onImportBackup with mode 'merge' when Merge is clicked", async () => {
+    const { onImportBackup } = renderPanel();
+    fireEvent.click(screen.getByText("Backup"));
+
+    const file = new File(["{}"], "backup.json", { type: "application/json" });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(screen.getByText("Merge"));
+
+    expect(onImportBackup).toHaveBeenCalledWith(file, "merge");
+  });
+
+  it("calls onImportBackup with mode 'replace' when Replace is clicked", async () => {
+    const { onImportBackup } = renderPanel();
+    fireEvent.click(screen.getByText("Backup"));
+
+    const file = new File(["{}"], "backup.json", { type: "application/json" });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(screen.getByText("Replace"));
+
+    expect(onImportBackup).toHaveBeenCalledWith(file, "replace");
+  });
+
+  it("dismisses the prompt without importing when Cancel is clicked", () => {
+    const { onImportBackup } = renderPanel();
+    fireEvent.click(screen.getByText("Backup"));
+
+    const file = new File(["{}"], "backup.json", { type: "application/json" });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(screen.getByText("Cancel"));
+
+    expect(onImportBackup).not.toHaveBeenCalled();
+    expect(screen.queryByText("Merge")).toBeNull();
   });
 });

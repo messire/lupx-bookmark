@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { AccordionGroup, SpeedDialSlot } from "../types";
 import { DEFAULT_MINI_ICON_SIZE } from "../types";
+import { mergeGroups } from "../utils/backup";
 
 const STORAGE_KEY = "accordionGroups";
 /** Legacy key from the old flat-grid implementation — migrated on first load. */
@@ -86,6 +87,12 @@ export interface UseAccordionsResult {
   swapGroups: (idxA: number, idxB: number) => Promise<void>;
   /** Delete a group by id (with all its items). */
   deleteGroup: (groupId: string) => Promise<void>;
+  /**
+   * Import groups from a backup. "merge" combines them with the current
+   * groups (matching by name, skipping duplicate URLs); "replace" discards
+   * the current groups entirely.
+   */
+  importGroups: (incoming: AccordionGroup[], mode: "merge" | "replace") => Promise<void>;
 }
 
 /**
@@ -270,6 +277,14 @@ export function useAccordions(): UseAccordionsResult {
     [persist],
   );
 
+  const importGroups = useCallback(
+    async (incoming: AccordionGroup[], mode: "merge" | "replace") => {
+      const next = mode === "replace" ? incoming : mergeGroups(groupsRef.current, incoming);
+      await persist(next);
+    },
+    [persist],
+  );
+
   return {
     groups,
     addGroup,
@@ -282,5 +297,6 @@ export function useAccordions(): UseAccordionsResult {
     setIconSize,
     swapGroups,
     deleteGroup,
+    importGroups,
   };
 }
