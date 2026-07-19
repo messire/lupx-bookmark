@@ -1,0 +1,120 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+/* Fixed dark-glass panel — matches the app's card/accordion aesthetic
+   (rgba(6,6,14,...) + accent glow) rather than the light/dark chrome
+   theme, so it reads consistently on top of any wallpaper or card style. */
+.modal {
+  position: relative;
+  overflow: hidden;
+  background: rgba(16, 16, 24, 0.92);
+  border: 1.5px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+  border-radius: 16px;
+  padding: 24px;
+  width: 420px;
+  max-width: calc(100vw - 48px);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    0 0 24px color-mix(in srgb, var(--color-accent) 20%, transparent);
+}
+
+/* Brand watermark sitting behind the form fields */
+.watermark {
+  position: absolute;
+  top: 50%;
+  right: -26px;
+  width: 190px;
+  height: 190px;
+  object-fit: contain;
+  opacity: 0.16;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f5f5ff;
+  margin: 0 0 8px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ccd0e8;
+  opacity: 0.8;
+}
+
+.input {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f5ff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.input:focus {
+  border-color: var(--color-accent);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cancelButton {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: #f5f5ff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.cancelButton:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.saveButton {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.saveButton:hover {
+  opacity: 0.85;
+}
