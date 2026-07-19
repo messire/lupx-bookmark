@@ -55,7 +55,7 @@ interface AccordionGroupProps {
   onRename: (groupId: string, name: string) => Promise<void>;
   onToggleCollapse: (groupId: string) => Promise<void>;
   onRemoveItem: (groupId: string, itemIdx: number) => Promise<void>;
-  onRenameItem: (groupId: string, itemIdx: number, title: string) => Promise<void>;
+  onEditItem: (groupId: string, itemIdx: number, url: string, title: string) => Promise<void>;
 }
 
 export default function AccordionGroup({
@@ -72,7 +72,7 @@ export default function AccordionGroup({
   onRename,
   onToggleCollapse,
   onRemoveItem,
-  onRenameItem,
+  onEditItem,
 }: AccordionGroupProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(group.name);
@@ -195,7 +195,7 @@ export default function AccordionGroup({
                 itemDragOverInfo?.groupId === group.id && itemDragOverInfo?.itemIdx === idx
               }
               onRemove={() => onRemoveItem(group.id, idx)}
-              onRename={(title) => onRenameItem(group.id, idx, title)}
+              onEdit={(url, title) => onEditItem(group.id, idx, url, title)}
             />
           ))}
 

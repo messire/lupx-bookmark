@@ -1,6 +1,7 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { getFaviconFallbackUrl, getDirectFaviconUrls } from "../../utils/favicon";
 import { useFaviconContext } from "../../newtab/FaviconCacheContext";
+import EditItemModal from "../EditItemModal/EditItemModal";
 import type { SpeedDialSlot, CardStyle } from "../../types";
 import styles from "./BookmarkCard.module.css";
 
@@ -36,7 +37,7 @@ interface BookmarkCardProps {
   onDrop: () => void;
   isDragOver: boolean;
   onRemove?: () => void;
-  onRename?: (title: string) => void;
+  onEdit?: (url: string, title: string) => void;
 }
 
 export default function BookmarkCard({
@@ -49,15 +50,13 @@ export default function BookmarkCard({
   onDrop,
   isDragOver,
   onRemove,
-  onRename,
+  onEdit,
 }: BookmarkCardProps) {
   const { getFavicon, refreshFavicon } = useFaviconContext();
 
   const [faviconStage, setFaviconStage] = useState<FaviconStage>(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const styleClass = STYLE_CLASS[cardStyle];
   const dragClass = isDragOver ? " " + styles.dragOver : "";
@@ -138,25 +137,13 @@ export default function BookmarkCard({
   function handleEditClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    setDraft(slot.title ?? slot.url ?? "");
     setEditing(true);
   }
 
-  function commitEdit() {
+  function handleEditSave(editedUrl: string, editedTitle: string) {
     setEditing(false);
-    const trimmed = draft.trim();
-    if (trimmed && trimmed !== (slot.title ?? slot.url)) {
-      onRename?.(trimmed);
-    }
-  }
-
-  function handleEditKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      commitEdit();
-    }
-    if (e.key === "Escape") {
-      setEditing(false);
+    if (editedUrl !== slot.url || editedTitle !== (slot.title ?? slot.url)) {
+      onEdit?.(editedUrl, editedTitle);
     }
   }
 
@@ -166,100 +153,94 @@ export default function BookmarkCard({
   const cardClassName = styles.card + " " + styleClass + dragClass + confirmingClass + editingClass;
 
   return (
-    <a
-      href={slot.url}
-      className={cardClassName}
-      title={isInteracting ? undefined : (slot.title ?? slot.url)}
-      onClick={handleClick}
-      draggable={!isInteracting}
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
-    >
-      {confirmDelete ? (
-        <div className={styles.confirmOverlay}>
-          <span className={styles.confirmLabel}>Remove?</span>
-          <div className={styles.confirmActions}>
-            <button
-              className={styles.confirmBtn + " " + styles.confirmYes}
-              onClick={handleConfirmDelete}
-              title="Yes, remove"
-            >
-              &#10003;
-            </button>
-            <button
-              className={styles.confirmBtn + " " + styles.confirmNo}
-              onClick={handleCancelDelete}
-              title="Cancel"
-            >
-              &#10005;
-            </button>
-          </div>
-        </div>
-      ) : editing ? (
-        <div className={styles.editOverlay}>
-          <input
-            ref={inputRef}
-            className={styles.editInput}
-            value={draft}
-            autoFocus
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commitEdit}
-            onKeyDown={handleEditKeyDown}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          />
-        </div>
-      ) : (
-        <>
-          {onRename && (
-            <button
-              className={styles.editBtn}
-              onClick={handleEditClick}
-              title="Rename bookmark"
-              aria-label="Rename bookmark"
-            >
-              <svg
-                width="10"
-                height="10"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+    <>
+      <a
+        href={slot.url}
+        className={cardClassName}
+        title={isInteracting ? undefined : (slot.title ?? slot.url)}
+        onClick={handleClick}
+        draggable={!isInteracting}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+      >
+        {confirmDelete ? (
+          <div className={styles.confirmOverlay}>
+            <span className={styles.confirmLabel}>Remove?</span>
+            <div className={styles.confirmActions}>
+              <button
+                className={styles.confirmBtn + " " + styles.confirmYes}
+                onClick={handleConfirmDelete}
+                title="Yes, remove"
               >
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-            </button>
-          )}
-          {onRemove && (
-            <button
-              className={styles.deleteBtn}
-              onClick={handleDeleteClick}
-              title="Remove bookmark"
-              aria-label="Remove bookmark"
-            >
-              &#10005;
-            </button>
-          )}
-          <div className={styles.thumbnail}>
-            <img
-              src={getIconSrc()}
-              alt=""
-              className={styles.favicon}
-              onLoad={handleImgLoad}
-              onError={handleImgError}
-            />
+                &#10003;
+              </button>
+              <button
+                className={styles.confirmBtn + " " + styles.confirmNo}
+                onClick={handleCancelDelete}
+                title="Cancel"
+              >
+                &#10005;
+              </button>
+            </div>
           </div>
-          {showTitle && cardStyle !== "icons" && (
-            <span className={styles.title}>{slot.title ?? slot.url}</span>
-          )}
-        </>
+        ) : (
+          <>
+            {onEdit && (
+              <button
+                className={styles.editBtn}
+                onClick={handleEditClick}
+                title="Edit bookmark"
+                aria-label="Edit bookmark"
+              >
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </button>
+            )}
+            {onRemove && (
+              <button
+                className={styles.deleteBtn}
+                onClick={handleDeleteClick}
+                title="Remove bookmark"
+                aria-label="Remove bookmark"
+              >
+                &#10005;
+              </button>
+            )}
+            <div className={styles.thumbnail}>
+              <img
+                src={getIconSrc()}
+                alt=""
+                className={styles.favicon}
+                onLoad={handleImgLoad}
+                onError={handleImgError}
+              />
+            </div>
+            {showTitle && cardStyle !== "icons" && (
+              <span className={styles.title}>{slot.title ?? slot.url}</span>
+            )}
+          </>
+        )}
+      </a>
+      {editing && (
+        <EditItemModal
+          initialTitle={slot.title ?? slot.url ?? ""}
+          initialUrl={slot.url ?? ""}
+          onSave={handleEditSave}
+          onCancel={() => setEditing(false)}
+        />
       )}
-    </a>
+    </>
   );
 }

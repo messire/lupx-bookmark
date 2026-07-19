@@ -64,7 +64,7 @@ function App() {
     deleteGroup,
     addItem,
     removeItem,
-    renameItem,
+    editItem,
     renameGroup,
     toggleCollapse,
     setIconSize,
@@ -163,13 +163,13 @@ function App() {
     [removeItem],
   );
 
-  // -- Rename item --
+  // -- Edit item --
 
-  const handleRenameItem = useCallback(
-    async (groupId: string, itemIdx: number, title: string) => {
-      await renameItem(groupId, itemIdx, title);
+  const handleEditItem = useCallback(
+    async (groupId: string, itemIdx: number, url: string, title: string) => {
+      await editItem(groupId, itemIdx, url, title);
     },
-    [renameItem],
+    [editItem],
   );
 
   // -- Search engine --
@@ -229,7 +229,7 @@ function App() {
               onRename={renameGroup}
               onToggleCollapse={toggleCollapse}
               onRemoveItem={handleRemoveItem}
-              onRenameItem={handleRenameItem}
+              onEditItem={handleEditItem}
             />
           ))}
         </div>
