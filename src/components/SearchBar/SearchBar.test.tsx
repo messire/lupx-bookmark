@@ -93,12 +93,19 @@ describe("SearchBar — search navigation", () => {
     expect(navigatedTo).toContain("google.com");
   });
 
-  it("does not navigate when the query is empty or only whitespace", () => {
+  it("opens the engine's home page when the query is empty or only whitespace", () => {
     renderBar("google");
     fireEvent.change(getInput(), { target: { value: "   " } });
     fireEvent.keyDown(getInput(), { key: "Enter" });
 
-    expect(navigatedTo).toBe("");
+    expect(navigatedTo).toBe("https://www.google.com");
+  });
+
+  it("opens the correct home page per engine when the query is empty", () => {
+    renderBar("yandex");
+    fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
+
+    expect(navigatedTo).toBe("https://www.yandex.com");
   });
 
   it("does not navigate on non-Enter key presses", () => {
