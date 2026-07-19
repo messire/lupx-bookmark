@@ -31,6 +31,8 @@ function renderPanel(
   const onDeleteGroup = vi.fn();
   const onSwapGroups = vi.fn();
   const onChangeIconSize = vi.fn();
+  const onExportBackup = vi.fn();
+  const onImportBackup = vi.fn().mockResolvedValue(undefined);
 
   const { rerender } = render(
     <SettingsPanel
@@ -43,6 +45,8 @@ function renderPanel(
       onDeleteGroup={onDeleteGroup}
       onSwapGroups={onSwapGroups}
       onChangeIconSize={onChangeIconSize}
+      onExportBackup={onExportBackup}
+      onImportBackup={onImportBackup}
     />,
   );
 
@@ -58,6 +62,8 @@ function renderPanel(
         onDeleteGroup={onDeleteGroup}
         onSwapGroups={onSwapGroups}
         onChangeIconSize={onChangeIconSize}
+        onExportBackup={onExportBackup}
+        onImportBackup={onImportBackup}
       />,
     );
   }
@@ -69,6 +75,8 @@ function renderPanel(
     onDeleteGroup,
     onSwapGroups,
     onChangeIconSize,
+    onExportBackup,
+    onImportBackup,
     rerenderWith,
   };
 }
@@ -131,6 +139,7 @@ describe("SettingsPanel — appearance toggles", () => {
 describe("SettingsPanel — itemsPerRow stepper", () => {
   it("increments itemsPerRow when the + stepper button is clicked", () => {
     const { onUpdate } = renderPanel({ ...DEFAULT_SETTINGS, itemsPerRow: 5 });
+    fireEvent.click(screen.getByText("Items"));
 
     // Two + buttons exist: "Add group" and the stepper. The stepper + is last.
     const plusBtns = screen.getAllByText("+");
@@ -141,6 +150,7 @@ describe("SettingsPanel — itemsPerRow stepper", () => {
 
   it("decrements itemsPerRow when the − stepper button is clicked", () => {
     const { onUpdate } = renderPanel({ ...DEFAULT_SETTINGS, itemsPerRow: 5 });
+    fireEvent.click(screen.getByText("Items"));
 
     // Multiple − buttons exist: per-group icon-size control(s) and the stepper.
     // The stepper − is last.
@@ -152,6 +162,7 @@ describe("SettingsPanel — itemsPerRow stepper", () => {
 
   it("clamps itemsPerRow to minimum 2 on decrement", () => {
     const { onUpdate } = renderPanel({ ...DEFAULT_SETTINGS, itemsPerRow: 2 });
+    fireEvent.click(screen.getByText("Items"));
 
     const minusBtns = screen.getAllByText("−");
     fireEvent.click(minusBtns[minusBtns.length - 1]);
@@ -161,6 +172,7 @@ describe("SettingsPanel — itemsPerRow stepper", () => {
 
   it("clamps itemsPerRow to maximum 10 on increment", () => {
     const { onUpdate } = renderPanel({ ...DEFAULT_SETTINGS, itemsPerRow: 10 });
+    fireEvent.click(screen.getByText("Items"));
 
     const plusBtns = screen.getAllByText("+");
     fireEvent.click(plusBtns[plusBtns.length - 1]);
@@ -202,6 +214,7 @@ describe("SettingsPanel — background type selector", () => {
 describe("SettingsPanel — group management", () => {
   it("calls onAddGroup when the Add group button is clicked", () => {
     const { onAddGroup } = renderPanel();
+    fireEvent.click(screen.getByText("Items"));
 
     fireEvent.click(screen.getByTitle("Add group"));
 
@@ -213,6 +226,7 @@ describe("SettingsPanel — group management", () => {
       { id: "g1", name: "Work", miniIconSize: 16 },
       { id: "g2", name: "Personal", miniIconSize: 16 },
     ]);
+    fireEvent.click(screen.getByText("Items"));
 
     fireEvent.click(screen.getByLabelText("Delete group Work"));
 
@@ -221,6 +235,7 @@ describe("SettingsPanel — group management", () => {
 
   it("disables the delete button when only one group exists", () => {
     renderPanel(DEFAULT_SETTINGS, [{ id: "g1", name: "Work", miniIconSize: 16 }]);
+    fireEvent.click(screen.getByText("Items"));
 
     const btn = screen.getByLabelText("Delete group Work") as HTMLButtonElement;
     expect(btn.disabled).toBe(true);
@@ -231,6 +246,7 @@ describe("SettingsPanel — group management", () => {
       { id: "g1", name: "Work", miniIconSize: 16 },
       { id: "g2", name: "Personal", miniIconSize: 16 },
     ]);
+    fireEvent.click(screen.getByText("Items"));
 
     const btn = screen.getByLabelText("Delete group Work") as HTMLButtonElement;
     expect(btn.disabled).toBe(false);
@@ -241,6 +257,7 @@ describe("SettingsPanel — group management", () => {
       { id: "g1", name: "Work", miniIconSize: 16 },
       { id: "g2", name: "Personal", miniIconSize: 16 },
     ]);
+    fireEvent.click(screen.getByText("Items"));
 
     fireEvent.click(screen.getByLabelText("Move group Personal up"));
 
@@ -252,6 +269,7 @@ describe("SettingsPanel — group management", () => {
       { id: "g1", name: "Work", miniIconSize: 16 },
       { id: "g2", name: "Personal", miniIconSize: 16 },
     ]);
+    fireEvent.click(screen.getByText("Items"));
 
     fireEvent.click(screen.getByLabelText("Move group Work down"));
 
@@ -262,6 +280,7 @@ describe("SettingsPanel — group management", () => {
     const { onChangeIconSize } = renderPanel(DEFAULT_SETTINGS, [
       { id: "g1", name: "Work", miniIconSize: 16 },
     ]);
+    fireEvent.click(screen.getByText("Items"));
 
     fireEvent.click(screen.getByLabelText("Decrease icon size for Work"));
 
@@ -272,6 +291,7 @@ describe("SettingsPanel — group management", () => {
     const { onChangeIconSize } = renderPanel(DEFAULT_SETTINGS, [
       { id: "g1", name: "Work", miniIconSize: 16 },
     ]);
+    fireEvent.click(screen.getByText("Items"));
 
     fireEvent.click(screen.getByLabelText("Increase icon size for Work"));
 
@@ -280,6 +300,7 @@ describe("SettingsPanel — group management", () => {
 
   it("disables the icon-size − button at the minimum and + button at the maximum", () => {
     renderPanel(DEFAULT_SETTINGS, [{ id: "g1", name: "Work", miniIconSize: 12 }]);
+    fireEvent.click(screen.getByText("Items"));
     expect(
       (screen.getByLabelText("Decrease icon size for Work") as HTMLButtonElement).disabled,
     ).toBe(true);
@@ -290,6 +311,7 @@ describe("SettingsPanel — group management", () => {
       { id: "g1", name: "Work", miniIconSize: 16 },
       { id: "g2", name: "Personal", miniIconSize: 16 },
     ]);
+    fireEvent.click(screen.getByText("Items"));
 
     expect((screen.getByLabelText("Move group Work up") as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByLabelText("Move group Personal down") as HTMLButtonElement).disabled).toBe(
@@ -328,5 +350,66 @@ describe("SettingsPanel — rollback", () => {
     fireEvent.click(screen.getByText("Rollback"));
 
     expect(onUpdate).toHaveBeenLastCalledWith(expect.objectContaining({ theme: "light" }));
+  });
+});
+
+describe("SettingsPanel — backup (import/export)", () => {
+  it("calls onExportBackup when the Export button is clicked", () => {
+    const { onExportBackup } = renderPanel();
+    fireEvent.click(screen.getByText("Backup"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Export" }));
+
+    expect(onExportBackup).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a merge/replace prompt after a file is chosen", () => {
+    renderPanel();
+    fireEvent.click(screen.getByText("Backup"));
+
+    const file = new File(["{}"], "backup.json", { type: "application/json" });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(screen.getByText(/backup\.json/)).toBeTruthy();
+    expect(screen.getByText("Merge")).toBeTruthy();
+    expect(screen.getByText("Replace")).toBeTruthy();
+  });
+
+  it("calls onImportBackup with mode 'merge' when Merge is clicked", async () => {
+    const { onImportBackup } = renderPanel();
+    fireEvent.click(screen.getByText("Backup"));
+
+    const file = new File(["{}"], "backup.json", { type: "application/json" });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(screen.getByText("Merge"));
+
+    expect(onImportBackup).toHaveBeenCalledWith(file, "merge");
+  });
+
+  it("calls onImportBackup with mode 'replace' when Replace is clicked", async () => {
+    const { onImportBackup } = renderPanel();
+    fireEvent.click(screen.getByText("Backup"));
+
+    const file = new File(["{}"], "backup.json", { type: "application/json" });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(screen.getByText("Replace"));
+
+    expect(onImportBackup).toHaveBeenCalledWith(file, "replace");
+  });
+
+  it("dismisses the prompt without importing when Cancel is clicked", () => {
+    const { onImportBackup } = renderPanel();
+    fireEvent.click(screen.getByText("Backup"));
+
+    const file = new File(["{}"], "backup.json", { type: "application/json" });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(screen.getByText("Cancel"));
+
+    expect(onImportBackup).not.toHaveBeenCalled();
+    expect(screen.queryByText("Merge")).toBeNull();
   });
 });

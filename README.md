@@ -30,6 +30,7 @@ single-purpose extension that does exactly one thing and stays out of your way.
 - **Cross-tab sync** — changes made in one tab are immediately reflected in all other open New Tab pages via `chrome.storage.onChanged`
 - **Resizable settings panel** — drag the panel edge to resize (240–640 px); width is remembered via `localStorage`
 - **Rollback** — Settings panel snapshots your config on open and offers a one-click rollback if you change your mind
+- **Import / Export** — back up settings and bookmark groups to a JSON file, or restore from one; importing lets you choose to merge with your current data or replace it entirely
 - **Error boundary** — a top-level React error boundary shows a recovery UI instead of a blank tab if rendering fails
 
 ---
@@ -143,12 +144,13 @@ lupx-bookmark/
 │   │   ├── BookmarkCard/     # Individual bookmark card (all 9 style variants)
 │   │   ├── AddSlotModal/     # Add-bookmark dialog with history suggestions
 │   │   ├── SearchBar/        # Search bar with engine picker
-│   │   ├── SettingsPanel/    # Slide-in settings drawer (incl. rollback)
+│   │   ├── SettingsPanel/    # Slide-in settings drawer (Style / Items / Backup tabs, rollback)
 │   │   └── ErrorBoundary/    # Top-level render-error recovery UI
 │   ├── types/
 │   │   └── index.ts          # Shared TypeScript types and constants
 │   ├── utils/
-│   │   └── favicon.ts        # favicon resolution: chrome://favicon2/ → Google S2 → pin.svg
+│   │   ├── favicon.ts        # favicon resolution: chrome://favicon2/ → Google S2 → pin.svg
+│   │   └── backup.ts         # Backup export/import: file I/O, validation, merge strategies
 │   └── test/
 │       └── setup.ts          # Vitest + jsdom test setup
 ├── manifest.json
@@ -177,6 +179,8 @@ All logic runs inside the New Tab page. There is no background service worker.
 - **Settings panel width** — kept in `localStorage` (not `chrome.storage`), since it's a local UI preference that doesn't need cross-tab sync or backup.
 - **Card styles** — implemented as CSS Module class variants on `BookmarkCard` and `AccordionGroup`; the active style is passed as a prop from settings, never read from DOM.
 - **No `chrome.bookmarks` API** — despite the name, bookmark cards are app-managed "slots," not entries in the browser's native bookmark tree.
+- **Backup import/export** (`src/utils/backup.ts`) — export serializes current settings + accordion groups to a downloaded JSON file (plain `Blob`/anchor, no `chrome.*` APIs). Import parses and validates
+  the file, then asks the user to **merge** (append imported groups to matching-name groups, skip duplicate URLs, deep-merge settings) or **replace** (overwrite settings and groups outright).
 
 ---
 

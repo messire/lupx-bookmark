@@ -49,9 +49,8 @@ export default function SearchBar({ engine, onEngineChange, cardStyle }: SearchB
 
   function handleSearch() {
     const q = query.trim();
-    if (!q) return;
     const eng = ENGINES.find((e) => e.value === engine) ?? ENGINES[0];
-    window.location.href = eng.buildUrl(q);
+    window.location.href = q ? eng.buildUrl(q) : eng.homeUrl;
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {

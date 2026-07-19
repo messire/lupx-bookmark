@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { AccordionGroup, SpeedDialSlot } from "../types";
 import { DEFAULT_MINI_ICON_SIZE } from "../types";
+import { mergeGroups } from "../utils/backup";
 
 const STORAGE_KEY = "accordionGroups";
 /** Legacy key from the old flat-grid implementation — migrated on first load. */
@@ -74,8 +75,8 @@ export interface UseAccordionsResult {
   ) => Promise<void>;
   /** Remove a single bookmark from a group by index. */
   removeItem: (groupId: string, itemIdx: number) => Promise<void>;
-  /** Rename a bookmark (update its title) by index. */
-  renameItem: (groupId: string, itemIdx: number, title: string) => Promise<void>;
+  /** Edit a bookmark's URL and title by index. */
+  editItem: (groupId: string, itemIdx: number, url: string, title: string) => Promise<void>;
   /** Rename a group (persists immediately). */
   renameGroup: (groupId: string, name: string) => Promise<void>;
   /** Toggle the collapsed state of a group. */
@@ -86,6 +87,12 @@ export interface UseAccordionsResult {
   swapGroups: (idxA: number, idxB: number) => Promise<void>;
   /** Delete a group by id (with all its items). */
   deleteGroup: (groupId: string) => Promise<void>;
+  /**
+   * Import groups from a backup. "merge" combines them with the current
+   * groups (matching by name, skipping duplicate URLs); "replace" discards
+   * the current groups entirely.
+   */
+  importGroups: (incoming: AccordionGroup[], mode: "merge" | "replace") => Promise<void>;
 }
 
 /**
@@ -208,13 +215,15 @@ export function useAccordions(): UseAccordionsResult {
     [persist],
   );
 
-  const renameItem = useCallback(
-    async (groupId: string, itemIdx: number, title: string) => {
+  const editItem = useCallback(
+    async (groupId: string, itemIdx: number, url: string, title: string) => {
       const next = groupsRef.current.map((g) => {
         if (g.id !== groupId) return g;
-        const items = g.items.map((item, idx) =>
-          idx === itemIdx ? { ...item, title: title.trim() || item.url } : item,
-        );
+        const items = g.items.map((item, idx) => {
+          if (idx !== itemIdx) return item;
+          const trimmedUrl = url.trim() || item.url;
+          return { ...item, url: trimmedUrl, title: title.trim() || trimmedUrl };
+        });
         return { ...g, items };
       });
       await persist(next);
@@ -270,17 +279,26 @@ export function useAccordions(): UseAccordionsResult {
     [persist],
   );
 
+  const importGroups = useCallback(
+    async (incoming: AccordionGroup[], mode: "merge" | "replace") => {
+      const next = mode === "replace" ? incoming : mergeGroups(groupsRef.current, incoming);
+      await persist(next);
+    },
+    [persist],
+  );
+
   return {
     groups,
     addGroup,
     addItem,
     moveItem,
     removeItem,
-    renameItem,
+    editItem,
     renameGroup,
     toggleCollapse,
     setIconSize,
     swapGroups,
     deleteGroup,
+    importGroups,
   };
 }

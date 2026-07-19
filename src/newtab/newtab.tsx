@@ -11,6 +11,7 @@ import AddSlotModal from "../components/AddSlotModal/AddSlotModal";
 import SettingsPanel from "../components/SettingsPanel/SettingsPanel";
 import SearchBar from "../components/SearchBar/SearchBar";
 import type { SearchEngine } from "../types";
+import { downloadBackup, parseBackupFile, mergeSettings } from "../utils/backup";
 import styles from "./newtab.module.css";
 
 // -- Card size --
@@ -19,28 +20,28 @@ const PAGE_PADDING_PCT = 0.2;
 const ACCORDION_BORDER = 3;
 const CONTENT_PAD_X = 24;
 const CARD_GAP = 10;
+/** Matches the gap in newtab.module.css's .groupsGrid rule. */
+const GROUP_GRID_GAP = 8;
 
-function calcCardWidth(itemsPerRow: number): number {
+function calcCardWidth(itemsPerRow: number, groupColumns: number): number {
   const pagePadding = window.innerWidth * PAGE_PADDING_PCT;
+  const totalAvailable = window.innerWidth - 2 * pagePadding;
+  const perGroupAvailable = (totalAvailable - (groupColumns - 1) * GROUP_GRID_GAP) / groupColumns;
   const available =
-    window.innerWidth -
-    2 * pagePadding -
-    ACCORDION_BORDER -
-    CONTENT_PAD_X -
-    (itemsPerRow - 1) * CARD_GAP;
+    perGroupAvailable - ACCORDION_BORDER - CONTENT_PAD_X - (itemsPerRow - 1) * CARD_GAP;
   return Math.max(60, Math.floor(available / itemsPerRow));
 }
 
-function useCardWidth(itemsPerRow: number): number {
-  const [w, setW] = useState(() => calcCardWidth(itemsPerRow));
+function useCardWidth(itemsPerRow: number, groupColumns: number): number {
+  const [w, setW] = useState(() => calcCardWidth(itemsPerRow, groupColumns));
   useEffect(() => {
     function update() {
-      setW(calcCardWidth(itemsPerRow));
+      setW(calcCardWidth(itemsPerRow, groupColumns));
     }
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
-  }, [itemsPerRow]);
+  }, [itemsPerRow, groupColumns]);
   return w;
 }
 
@@ -63,12 +64,13 @@ function App() {
     deleteGroup,
     addItem,
     removeItem,
-    renameItem,
+    editItem,
     renameGroup,
     toggleCollapse,
     setIconSize,
+    importGroups,
   } = useAccordions();
-  const cardWidth = useCardWidth(settings.itemsPerRow);
+  const cardWidth = useCardWidth(settings.itemsPerRow, settings.groupColumns);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addingToGroup, setAddingToGroup] = useState<string | null>(null);
@@ -161,13 +163,13 @@ function App() {
     [removeItem],
   );
 
-  // -- Rename item --
+  // -- Edit item --
 
-  const handleRenameItem = useCallback(
-    async (groupId: string, itemIdx: number, title: string) => {
-      await renameItem(groupId, itemIdx, title);
+  const handleEditItem = useCallback(
+    async (groupId: string, itemIdx: number, url: string, title: string) => {
+      await editItem(groupId, itemIdx, url, title);
     },
-    [renameItem],
+    [editItem],
   );
 
   // -- Search engine --
@@ -177,6 +179,21 @@ function App() {
       updateSettings({ searchEngine: engine });
     },
     [updateSettings],
+  );
+
+  // -- Backup (import/export) --
+
+  const handleExportBackup = useCallback(() => {
+    downloadBackup(settings, groups);
+  }, [settings, groups]);
+
+  const handleImportBackup = useCallback(
+    async (file: File, mode: "merge" | "replace") => {
+      const data = await parseBackupFile(file);
+      updateSettings(mode === "replace" ? data.settings : mergeSettings(settings, data.settings));
+      await importGroups(data.groups, mode);
+    },
+    [settings, updateSettings, importGroups],
   );
 
   // -- Render --
@@ -192,25 +209,30 @@ function App() {
           />
         </div>
 
-        {groups.map((group) => (
-          <AccordionGroup
-            key={group.id}
-            group={group}
-            itemsPerRow={settings.itemsPerRow}
-            cardWidth={cardWidth}
-            showTitles={settings.showTitles}
-            cardStyle={settings.cardStyle}
-            onItemDragStart={handleItemDragStart}
-            onItemDragOver={handleItemDragOver}
-            onItemDrop={handleItemDrop}
-            itemDragOverInfo={itemDragOver}
-            onClickAdd={setAddingToGroup}
-            onRename={renameGroup}
-            onToggleCollapse={toggleCollapse}
-            onRemoveItem={handleRemoveItem}
-            onRenameItem={handleRenameItem}
-          />
-        ))}
+        <div
+          className={styles.groupsGrid}
+          style={{ gridTemplateColumns: `repeat(${settings.groupColumns}, 1fr)` }}
+        >
+          {groups.map((group) => (
+            <AccordionGroup
+              key={group.id}
+              group={group}
+              itemsPerRow={settings.itemsPerRow}
+              cardWidth={cardWidth}
+              showTitles={settings.showTitles}
+              cardStyle={settings.cardStyle}
+              onItemDragStart={handleItemDragStart}
+              onItemDragOver={handleItemDragOver}
+              onItemDrop={handleItemDrop}
+              itemDragOverInfo={itemDragOver}
+              onClickAdd={setAddingToGroup}
+              onRename={renameGroup}
+              onToggleCollapse={toggleCollapse}
+              onRemoveItem={handleRemoveItem}
+              onEditItem={handleEditItem}
+            />
+          ))}
+        </div>
 
         <button
           className={styles.settingsBtn}
@@ -242,6 +264,8 @@ function App() {
           onDeleteGroup={handleDeleteGroup}
           onSwapGroups={handleSwapGroups}
           onChangeIconSize={setIconSize}
+          onExportBackup={handleExportBackup}
+          onImportBackup={handleImportBackup}
         />
 
         {addingToGroup !== null && (
