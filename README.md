@@ -188,6 +188,16 @@ All logic runs inside the New Tab page. There is no background service worker.
 
 ---
 
+## Versioning
+
+Versions are `X.Y.Z` ([SemVer](https://semver.org)), kept in sync in `package.json` and `manifest.json`. The product is past 1.0.0, so a release bumps the most significant part that applies to the changes since the previous release:
+
+- **Z (patch)**: fixes only. No new features, and no change to stored data (`chrome.storage.local`) or the backup JSON format.
+- **Y (minor)**: a new backward-compatible feature or setting. Data saved by the previous version keeps working; new settings get defaults.
+- **X (major)**: a breaking change: stored data or backup files that an older version cannot read, a removed feature, or changed default behaviour.
+
+Changes collect under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md); a release renames that heading to the new version.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).

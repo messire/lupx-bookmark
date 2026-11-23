@@ -1,5 +1,7 @@
 # Changelog
 
+Versions follow the rule in [README → Versioning](README.md#versioning): patch for fixes only, minor for backward-compatible features, major for breaking changes.
+
 ## [1.3.0] — 2026-07-19
 
 - Settings panel split into tabs.
